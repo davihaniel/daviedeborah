@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      mobx_codegen|mobx_generator:
+        generate_for:
+          - lib/**/*.dart
+        options:
+          ignore_stores: false
