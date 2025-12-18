@@ -75,7 +75,8 @@ class SupabaseService {
       final response = await client
           .from('anfitriao')
           .select()
-          .isFilter('dat_exclusao', null);
+          .isFilter('dat_exclusao', null)
+          .order('nome', ascending: true);
 
       final list = (response as List)
           .map((e) => Anfitriao.fromJson(e))
@@ -119,6 +120,36 @@ class SupabaseService {
       return Anfitriao.fromJson(response);
     } catch (e) {
       throw Exception('Erro ao atualizar confirmação: $e');
+    }
+  }
+
+  /// Atualiza dados do anfitrião (nome, número e confirmação)
+  Future<Anfitriao> atualizarAnfitriao({
+    required String id,
+    required String nome,
+    required String numero,
+    required bool confirmacao,
+  }) async {
+    try {
+      final response = await client
+          .from('anfitriao')
+          .update({'nome': nome, 'numero': numero, 'confirmacao': confirmacao})
+          .eq('id', id)
+          .select()
+          .single();
+
+      await client
+          .from('convidado')
+          .update({
+            'dat_exclusao': confirmacao
+                ? null
+                : DateTime.now().toIso8601String(),
+          })
+          .eq('id_anfitriao', id);
+
+      return Anfitriao.fromJson(response);
+    } catch (e) {
+      throw Exception('Erro ao atualizar anfitrião: $e');
     }
   }
 
@@ -166,7 +197,8 @@ class SupabaseService {
           .from('convidado')
           .select()
           .eq('id_anfitriao', idAnfitriao)
-          .isFilter('dat_exclusao', null);
+          .isFilter('dat_exclusao', null)
+          .order('nome', ascending: true);
 
       final list = (response as List)
           .map((e) => Convidado.fromJson(e))
@@ -183,7 +215,8 @@ class SupabaseService {
       final response = await client
           .from('convidado')
           .select()
-          .isFilter('dat_exclusao', null);
+          .isFilter('dat_exclusao', null)
+          .order('nome', ascending: true);
 
       final list = (response as List)
           .map((e) => Convidado.fromJson(e))
@@ -199,11 +232,16 @@ class SupabaseService {
     required String id,
     required String nome,
     int? idade,
+    String? idAnfitriao,
   }) async {
     try {
       final response = await client
           .from('convidado')
-          .update({'nome': nome, 'idade': idade})
+          .update({
+            'nome': nome,
+            'idade': idade,
+            if (idAnfitriao != null) 'id_anfitriao': idAnfitriao,
+          })
           .eq('id', id)
           .select()
           .single();
@@ -378,7 +416,7 @@ class SupabaseService {
         'total_anfitrioes': totalAnfitriaos,
         'total_confirmados': totalConfirmados,
         'taxa_confirmacao': totalAnfitriaos > 0
-            ? totalConfirmados / totalAnfitriaos
+            ? (totalConfirmados / totalAnfitriaos ) * 100
             : 0,
         'total_convidados': totalConvidados,
         'total_criancas': totalCriancas,

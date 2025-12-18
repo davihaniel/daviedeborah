@@ -15,15 +15,10 @@ class RecepcaoPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
         children: [
-          const SectionTitle(
-            title: 'Recepção',
-            subtitle: 'Hora de celebrar!',
-          ),
+          const SectionTitle(title: 'Recepção', subtitle: 'Hora de celebrar!'),
           const SizedBox(height: 48),
-          
+
           _buildReceptionDetails(context, isMobile),
-          
-          const SizedBox(height: 48),
         ],
       ),
     );
@@ -31,9 +26,8 @@ class RecepcaoPage extends StatelessWidget {
 
   Widget _buildReceptionDetails(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 24 : 100,
-      ),
+      width: isMobile ? double.infinity : 1200,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 48),
       child: Column(
         children: [
           // Card principal
@@ -48,57 +42,27 @@ class RecepcaoPage extends StatelessWidget {
                     color: AppTheme.primaryColor,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   _buildInfoRow(
                     FontAwesomeIcons.clock,
                     'Horário',
-                    '17:00h',
+                    'Após a cerimônia',
                     isMobile,
                   ),
                   const SizedBox(height: 24),
                   _buildInfoRow(
                     FontAwesomeIcons.buildingColumns,
                     'Local',
-                    'A recepção será no local da cerimônia',
+                    'A recepção será no local',
                     isMobile,
                   ),
                 ],
               ),
             ),
           ),
-          
+
           const SizedBox(height: 32),
-          
-          // Programação
-          Card(
-            child: Padding(
-              padding: EdgeInsets.all(isMobile ? 24 : 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Programação',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: isMobile ? 22 : 26,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildScheduleItem('17:00', 'Recepção dos convidados', isMobile),
-                  _buildScheduleItem('17:30', 'Entrada dos noivos', isMobile),
-                  _buildScheduleItem('18:30', 'Jantar', isMobile),
-                  _buildScheduleItem('19:30', 'Corte do bolo', isMobile),
-                  //_buildScheduleItem('21:00', 'Primeira valsa', isMobile),
-                  //_buildScheduleItem('21:30', 'Pista de dança liberada', isMobile),
-                  _buildScheduleItem('20:00', 'Encerramento', isMobile),
-                ],
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 32),
-          
+          /*
           // Informações adicionais
           Card(
             child: Padding(
@@ -152,22 +116,23 @@ class RecepcaoPage extends StatelessWidget {
                 ],
               ),
             ),
-          ),
+          ),*/
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, bool isMobile) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value,
+    bool isMobile,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(
-          icon,
-          size: isMobile ? 20 : 24,
-          color: AppTheme.primaryColor,
-        ),
+        Icon(icon, size: isMobile ? 20 : 24, color: AppTheme.primaryColor),
         const SizedBox(width: 16),
         Expanded(
           flex: isMobile ? 1 : 0,
@@ -197,43 +162,7 @@ class RecepcaoPage extends StatelessWidget {
     );
   }
 
-  Widget _buildScheduleItem(String time, String event, bool isMobile) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            width: isMobile ? 60 : 70,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            decoration: BoxDecoration(
-              color: AppTheme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              time,
-              style: GoogleFonts.lato(
-                fontSize: isMobile ? 14 : 16,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              event,
-              style: GoogleFonts.lato(
-                fontSize: isMobile ? 15 : 16,
-                color: AppTheme.textColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  /*
   Widget _buildFeatureTile(IconData icon, String title, String description, bool isMobile) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,5 +199,5 @@ class RecepcaoPage extends StatelessWidget {
         ),
       ],
     );
-  }
+  }*/
 }

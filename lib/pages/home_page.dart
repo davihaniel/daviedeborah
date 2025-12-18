@@ -1,11 +1,12 @@
 import 'package:daviedeborah/stores/home_store.dart';
 import 'package:daviedeborah/utils/extensions.dart';
+import 'package:daviedeborah/services/image_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../main.dart';
 import '../utils/variables.dart';
-import '../widgets/custom_app_bar.dart';
 import '../config/app_theme.dart';
 import 'casal_page.dart';
 import 'cerimonia_page.dart';
@@ -23,7 +24,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
-  final homeStore = HomeStore();
+  final _store = HomeStore();
   final rsvpLimit = DateTime.now().isAfter(rsvpLimitDate);
 
   late String fundoAleatorio;
@@ -53,17 +54,29 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     fundoAleatorio = getRandomBackgroundImage();
-    homeStore.startTimer();
+    _store.startTimer();
+    _scrollController.addListener(() => _store.onScroll(_scrollController));
+    
+    // Pré-carregar imagens no background com delay para não bloquear a UI
+    Future.delayed(const Duration(milliseconds: 500), () {
+      ImageCacheService().precacheImagesWithDelay(
+        // ignore: use_build_context_synchronously
+        context,
+        galeryImages,
+        delayBetween: const Duration(milliseconds: 150),
+      );
+    });
   }
 
-  getRandomBackgroundImage(){
+  getRandomBackgroundImage() {
     galeryImages.shuffle();
     return galeryImages.first;
   }
 
   @override
   void dispose() {
-    homeStore.timer.cancel();
+    _store.timer.cancel();
+    _scrollController.removeListener(() => _store.onScroll(_scrollController));
     _scrollController.dispose();
     super.dispose();
   }
@@ -72,69 +85,186 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
-    final appBar = CustomAppBar(onNavigate: _scrollToSection);
 
     return Scaffold(
-      appBar: appBar,
-      endDrawer: isMobile ? appBar.buildDrawer(context) : null,
-      body: SingleChildScrollView(
+      body: CustomScrollView(
         controller: _scrollController,
-        child: Column(
-          children: [
-            // Hero Section
-            Container(
-              key: _sectionKeys['home'],
-              child: _buildHeroSection(context, isMobile),
+        slivers: [
+          // SliverAppBar que controla show/hide
+          SliverAppBar(
+            backgroundColor: AppTheme.appBarColor.withValues(alpha: 0.8),
+            floating: true,
+            snap: true,
+            pinned: false,
+            elevation: 0,
+            toolbarHeight: kToolbarHeight,
+            automaticallyImplyLeading: false,
+            title: InkWell(
+              onTap: () => _scrollToSection('home'),
+              child: Text(
+                'D&D',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
+            actions: isMobile
+                ? [
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu),
+                        onPressed: () => Scaffold.of(context).openEndDrawer(),
+                      ),
+                    ),
+                  ]
+                : [
+                    _NavButton(
+                      label: 'Início',
+                      onTap: () => _scrollToSection('home'),
+                    ),
+                    _NavButton(
+                      label: 'O Casal',
+                      onTap: () => _scrollToSection('casal'),
+                    ),
+                    _NavButton(
+                      label: 'Cerimônia',
+                      onTap: () => _scrollToSection('cerimonia'),
+                    ),
+                    _NavButton(
+                      label: 'Recepção',
+                      onTap: () => _scrollToSection('recepcao'),
+                    ),
+                    _NavButton(
+                      label: 'Presentes',
+                      onTap: () => _scrollToSection('presentes'),
+                    ),
+                    _NavButton(
+                      label: 'Recados',
+                      onTap: () => _scrollToSection('recados'),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+          ),
+          // Body content
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                // Hero Section
+                Container(
+                  key: _sectionKeys['home'],
+                  child: _buildHeroSection(context, isMobile),
+                ),
 
-            // Mensagem dos Noivos
-            _buildMensagemNoivos(isMobile),
+                // Mensagem dos Noivos
+                _buildMensagemNoivos(isMobile),
 
-            // Contador de dias
-            Observer(
-              builder: (_) {
-                return _buildCountdownSection(isMobile, homeStore.now);
-              },
+                // Contador de dias
+                Observer(
+                  builder: (_) {
+                    return _buildCountdownSection(isMobile, _store.now);
+                  },
+                ),
+
+                // O Casal Section
+                Container(key: _sectionKeys['casal'], child: const CasalPage()),
+
+                // Cerimônia Section
+                Container(
+                  key: _sectionKeys['cerimonia'],
+                  child: const CerimoniaPage(),
+                ),
+
+                // Recepção Section
+                Container(
+                  key: _sectionKeys['recepcao'],
+                  child: const RecepcaoPage(),
+                ),
+
+                // Presentes Section
+                Container(
+                  key: _sectionKeys['presentes'],
+                  child: const PresentesPage(),
+                ),
+
+                if (!rsvpLimit && rsvpEnable)
+                  // RSVP Section
+                  Container(key: _sectionKeys['rsvp'], child: const RsvpPage()),
+
+                // Recados Section
+                Container(
+                  key: _sectionKeys['recados'],
+                  child: const RecadosPage(),
+                ),
+
+                // Footer
+                _buildFooter(isMobile),
+              ],
             ),
-
-            // O Casal Section
-            Container(key: _sectionKeys['casal'], child: const CasalPage()),
-
-            // Cerimônia Section
-            Container(
-              key: _sectionKeys['cerimonia'],
-              child: const CerimoniaPage(),
-            ),
-
-            // Recepção Section
-            Container(
-              key: _sectionKeys['recepcao'],
-              child: const RecepcaoPage(),
-            ),
-
-            // Presentes Section
-            Container(
-              key: _sectionKeys['presentes'],
-              child: const PresentesPage(),
-            ),
-
-            if(!rsvpLimit)
-            // RSVP Section
-            Container(key: _sectionKeys['rsvp'], child: const RsvpPage()),
-
-            // Recados Section
-            Container(key: _sectionKeys['recados'], child: const RecadosPage()),
-
-            // Footer
-            _buildFooter(isMobile),
-          ],
-        ),
+          ),
+        ],
       ),
+      endDrawer: isMobile
+          ? Drawer(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _DrawerItem(
+                    icon: FontAwesomeIcons.house,
+                    label: 'Início',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _scrollToSection('home');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: FontAwesomeIcons.userGroup,
+                    label: 'O Casal',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _scrollToSection('casal');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: FontAwesomeIcons.church,
+                    label: 'Cerimônia',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _scrollToSection('cerimonia');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: FontAwesomeIcons.champagneGlasses,
+                    label: 'Recepção',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _scrollToSection('recepcao');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: FontAwesomeIcons.gift,
+                    label: 'Presentes',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _scrollToSection('presentes');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: FontAwesomeIcons.envelopeOpenText,
+                    label: 'Recados',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _scrollToSection('recados');
+                    },
+                  ),
+                ],
+              ),
+            )
+          : null,
     );
   }
 
   Widget _buildHeroSection(BuildContext context, bool isMobile) {
-  final tamanhoTela = MediaQuery.of(context).size.height;
+    final tamanhoTela = MediaQuery.of(context).size.height;
     return Container(
       height: tamanhoTela * 0.95,
       decoration: BoxDecoration(
@@ -221,7 +351,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  if (rsvpLimit == false) ...[
+                  if (rsvpLimit == false && rsvpEnable) ...[
                     const SizedBox(height: 32),
                     ElevatedButton.icon(
                       onPressed: () => _scrollToSection('rsvp'),
@@ -433,16 +563,11 @@ class _HomePageState extends State<HomePage> {
       color: AppTheme.primaryColor.withValues(alpha: 0.1),
       child: Center(
         child: Column(
+          spacing: 8,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  FontAwesomeIcons.heart,
-                  size: isMobile ? 16 : 20,
-                  color: AppTheme.primaryColor,
-                ),
-                const SizedBox(width: 8),
                 Text(
                   'Davi & Deborah - 2026',
                   style: GoogleFonts.lato(
@@ -450,17 +575,18 @@ class _HomePageState extends State<HomePage> {
                     color: AppTheme.textColor,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Icon(
-                  FontAwesomeIcons.heart,
-                  size: isMobile ? 16 : 20,
-                  color: AppTheme.primaryColor,
-                ),
               ],
             ),
-            const SizedBox(height: 8),
             Text(
               'Desenvolvido por mim, Davi.',
+              style: GoogleFonts.lato(
+                fontSize: isMobile ? 12 : 14,
+                color: AppTheme.lightTextColor,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            Text(
+              versaoAtual,
               style: GoogleFonts.lato(
                 fontSize: isMobile ? 12 : 14,
                 color: AppTheme.lightTextColor,
@@ -470,6 +596,49 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _NavButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap,
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 16,
+          color: AppTheme.secondaryColor,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _DrawerItem({
+    required this.label,
+    required this.onTap,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, size: 20, color: AppTheme.primaryColor),
+      title: Text(label),
+      onTap: onTap,
     );
   }
 }

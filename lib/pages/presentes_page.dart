@@ -1,4 +1,6 @@
+import 'package:daviedeborah/utils/variables.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/section_title.dart';
@@ -12,17 +14,18 @@ class PresentesPage extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Container(
+      width: double.infinity,
       color: AppTheme.lightGray,
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
         children: [
           const SectionTitle(
-            title: 'Lista de Presentes',
+            title: 'Presentes',
             subtitle: 'Sua presença é nosso maior presente!',
           ),
           const SizedBox(height: 48),
 
-          _buildGiftMessage(isMobile),
+          _buildGiftMessage(isMobile, context),
 
           const SizedBox(height: 32),
         ],
@@ -30,9 +33,10 @@ class PresentesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildGiftMessage(bool isMobile) {
+  Widget _buildGiftMessage(bool isMobile, BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 100),
+      width: isMobile ? double.infinity : 1200,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 48),
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(isMobile ? 24 : 32),
@@ -92,21 +96,46 @@ class PresentesPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    SelectableText(
-                      'daviedeborah@hotmail.com',
-                      style: GoogleFonts.lato(
-                        fontSize: isMobile ? 16 : 18,
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      textAlign: TextAlign.center,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SelectableText(
+                          pixKey,
+                          style: GoogleFonts.lato(
+                            fontSize: isMobile ? 16 : 18,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: pixKey));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Chave PIX copiada para a área de transferência!',
+                                  style: GoogleFonts.lato(),
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          icon: Icon(
+                            Icons.copy_outlined,
+                            size: isMobile ? 16 : 18,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'Titular: Davi Haniel Reis Silva - Nubank SA.',
+                'Titular: $pixHolderName - $pixBankName',
                 style: GoogleFonts.lato(
                   fontSize: isMobile ? 13 : 14,
                   color: AppTheme.lightTextColor,

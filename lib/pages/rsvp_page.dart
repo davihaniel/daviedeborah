@@ -107,7 +107,23 @@ class _RsvpPageState extends State<RsvpPage> {
     while (_guestIsChild.length > count) {
       _guestIsChild.removeLast();
     }
+
+    // Garante que o anfitrião (primeiro convidado) sempre reflita o nome informado
+    if (_guestNameCtrls.isNotEmpty) {
+      _updateHostNameController(_store.nome);
+    }
+    if (_guestIsChild.isNotEmpty) {
+      _guestIsChild[0] = false;
+    }
     setState(() {});
+  }
+
+  void _updateHostNameController(String value) {
+    if (_guestNameCtrls.isEmpty) return;
+    _guestNameCtrls[0].text = value;
+    _guestNameCtrls[0].selection = TextSelection.fromPosition(
+      TextPosition(offset: value.length),
+    );
   }
 
   @override
@@ -134,7 +150,8 @@ class _RsvpPageState extends State<RsvpPage> {
 
   Widget _buildRsvpForm(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 100),
+      width: isMobile ? double.infinity : 1200,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 48),
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(isMobile ? 24 : 48),
@@ -161,103 +178,105 @@ class _RsvpPageState extends State<RsvpPage> {
                 const SizedBox(height: 32),
 
                 // Nome
-                Observer(
-                  builder: (_) => TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Nome Completo *',
-                      hintText: 'Digite seu nome completo',
-                      prefixIcon: const Icon(FontAwesomeIcons.user),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Nome Completo *',
+                    hintText: 'Digite seu nome completo',
+                    prefixIcon: const Icon(FontAwesomeIcons.user),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, digite seu nome';
-                      }
-                      return null;
-                    },
-                    onChanged: _store.setNome,
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, digite seu nome';
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    _store.setNome(value);
+                    _updateHostNameController(value);
+                  },
                 ),
 
                 const SizedBox(height: 24),
 
                 // Email
-                Observer(
-                  builder: (_) => TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Telefone *',
-                      hintText: '(99) 99999-9999',
-                      prefixIcon: const Icon(FontAwesomeIcons.phone),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Telefone *',
+                    hintText: '(99) 99999-9999',
+                    prefixIcon: const Icon(FontAwesomeIcons.phone),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [PhoneMaskFormatter()],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, digite seu telefone';
-                      }
-                      final digits = value.replaceAll(RegExp(r'\D'), '');
-                      if (digits.length != 11) {
-                        return 'Por favor, digite um telefone válido com 11 dígitos';
-                      }
-                      return null;
-                    },
-                    onChanged: _store.setTelefone,
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [PhoneMaskFormatter()],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, digite seu telefone';
+                    }
+                    final digits = value.replaceAll(RegExp(r'\D'), '');
+                    if (digits.length != 11) {
+                      return 'Por favor, digite um telefone válido com 11 dígitos';
+                    }
+                    return null;
+                  },
+                  onChanged: _store.setTelefone,
                 ),
 
                 const SizedBox(height: 24),
 
                 // Confirmação
-                Observer(
-                  builder: (_) => Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Você irá ao casamento? *',
-                          style: GoogleFonts.lato(
-                            fontSize: isMobile ? 15 : 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textColor,
-                          ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Você irá ao casamento? *',
+                        style: GoogleFonts.lato(
+                          fontSize: isMobile ? 15 : 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textColor,
                         ),
-                        const SizedBox(height: 12),
-                        Column(
-                          children: [
-                            RadioListTile<bool>(
-                              title: const Text('Sim, estarei lá!'),
-                              value: true,
-                              groupValue: _store.confirmado,
-                              onChanged: (value) =>
-                                  _store.setConfirmado(value!),
-                              activeColor: AppTheme.primaryColor,
+                      ),
+                      const SizedBox(height: 12),
+                      Observer(
+                        builder: (_) {
+
+                          return RadioGroup<bool>(
+                            onChanged: (value) {
+                              _store.setConfirmado(value!);
+                            },
+                            groupValue: _store.confirmado,
+                            child: Column(
+                              children: [
+                                RadioListTile<bool>(
+                                  title: const Text('Sim, estarei lá!'),
+                                  value: true,
+                                  activeColor: AppTheme.primaryColor,
+                                ),
+                                RadioListTile<bool>(
+                                  title: const Text('Não poderei ir'),
+                                  value: false,
+                                  activeColor: AppTheme.primaryColor,
+                                ),
+                              ],
                             ),
-                            RadioListTile<bool>(
-                              title: const Text('Não poderei ir'),
-                              value: false,
-                              groupValue: _store.confirmado,
-                              onChanged: (value) =>
-                                  _store.setConfirmado(value!),
-                              activeColor: AppTheme.primaryColor,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
 
@@ -430,8 +449,12 @@ class _RsvpPageState extends State<RsvpPage> {
                     TextFormField(
                       controller: nameCtrl,
                       decoration: InputDecoration(
-                        labelText: 'Nome do convidado ${index + 1} *',
-                        hintText: 'Digite o nome completo',
+                        labelText: index == 0
+                            ? 'Nome do anfitrião'
+                            : 'Nome do convidado ${index + 1} *',
+                        hintText: index == 0
+                            ? 'Usamos o nome informado no início'
+                            : 'Digite o nome completo',
                         prefixIcon: const Icon(FontAwesomeIcons.user),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -439,42 +462,47 @@ class _RsvpPageState extends State<RsvpPage> {
                         filled: true,
                         fillColor: Colors.grey.shade50,
                       ),
+                      readOnly: index == 0,
+                      enabled: index != 0,
                     ),
                     const SizedBox(height: 12),
-                    CheckboxListTile(
-                      title: const Text('É criança? (até 6 anos)'),
-                      value: isChild,
-                      onChanged: (value) {
-                        setState(() {
-                          _guestIsChild[index] = value ?? false;
-                          if (!value!) {
-                            ageCtrl.clear();
-                          }
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                      activeColor: AppTheme.primaryColor,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    if (isChild) ...[
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: ageCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Idade da criança *',
-                          hintText: 'ex: 3',
-                          prefixIcon: const Icon(FontAwesomeIcons.cakeCandles),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
+                    if (index > 0) ...[
+                      CheckboxListTile(
+                        title: const Text('É criança? (até 6 anos)'),
+                        value: isChild,
+                        onChanged: (value) {
+                          setState(() {
+                            _guestIsChild[index] = value ?? false;
+                            if (!(value ?? false)) {
+                              ageCtrl.clear();
+                            }
+                          });
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        activeColor: AppTheme.primaryColor,
+                        contentPadding: EdgeInsets.zero,
                       ),
+                      if (isChild) ...[
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: ageCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Idade da criança *',
+                            hintText: 'ex: 3',
+                            prefixIcon:
+                                const Icon(FontAwesomeIcons.cakeCandles),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                        ),
+                      ],
                     ],
                   ],
                 ),
@@ -524,8 +552,9 @@ class _RsvpPageState extends State<RsvpPage> {
         if (_store.confirmado) {
           for (var i = 0; i < _store.numeroPessoas; i++) {
             final nome = _guestNameCtrls[i].text.trim();
-            final idade =
-                _guestIsChild[i] ? int.tryParse(_guestAgeCtrls[i].text) : null;
+            final idade = _guestIsChild[i]
+                ? int.tryParse(_guestAgeCtrls[i].text)
+                : null;
             convidados.add({'nome': nome, 'idade': idade});
           }
         }
@@ -543,7 +572,7 @@ class _RsvpPageState extends State<RsvpPage> {
         setState(() => _isSubmitting = false);
 
         // Mostrar dialog de sucesso
-        if(!context.mounted) return;
+        if (!context.mounted) return;
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -584,11 +613,13 @@ class _RsvpPageState extends State<RsvpPage> {
                       const SizedBox(height: 8),
                       ...List.generate(_store.numeroPessoas, (i) {
                         final nome = _guestNameCtrls[i].text.trim();
-                        final idade =
-                            int.tryParse(_guestAgeCtrls[i].text.trim());
+                        final idade = int.tryParse(
+                          _guestAgeCtrls[i].text.trim(),
+                        );
                         final crianca = idade != null && idade <= 6;
-                        final detalheIdade =
-                            idade == null ? '' : ' - $idade anos';
+                        final detalheIdade = idade == null
+                            ? ''
+                            : ' - $idade anos';
                         return Text(
                           '• $nome$detalheIdade ${crianca ? "(criança)" : ""}',
                           style: GoogleFonts.lato(),

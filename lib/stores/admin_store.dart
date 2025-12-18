@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'admin_store.g.dart';
 
+// ignore: library_private_types_in_public_api
 class AdminStore = _AdminStore with _$AdminStore;
 
 abstract class _AdminStore with Store {

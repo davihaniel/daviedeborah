@@ -10,6 +10,7 @@ class AppTheme {
   static const Color lightGray = Color(0xFFF5F5F5); // Cinza claro para fundo
   static const Color textColor = Color(0xFF4A4A4A); // Cinza escuro
   static const Color lightTextColor = Color(0xFF8A8A8A); // Cinza claro
+  static const Color appBarColor = Color(0xFFf1f1e3); // Cinza para AppBar
 
   static ThemeData get theme {
     return ThemeData(

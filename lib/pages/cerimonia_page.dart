@@ -41,6 +41,7 @@ class CerimoniaPage extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Container(
+    width: double.infinity,
       color: AppTheme.lightGray,
       child: Column(
         children: [
@@ -96,12 +97,12 @@ class CerimoniaPage extends StatelessWidget {
           const SizedBox(height: 16),
           SelectionArea(
             child: Text(
-              'R. Dona Inházinha Castro, 5 - Ch Gervasio Monteiro, Santa Luzia - MG',
+              'R. Dona Inházinha Castro, 5 - Chácaras Gervasio Monteiro, Santa Luzia - MG',
               style: GoogleFonts.lato(
                 fontSize: isMobile ? 14 : 16,
                 color: AppTheme.lightTextColor,
               ),
-              textAlign: TextAlign.center,
+              textAlign: isMobile ? TextAlign.center : TextAlign.start,
             ),
           ),
 
@@ -124,7 +125,8 @@ class CerimoniaPage extends StatelessWidget {
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 100),
+      width: isMobile ? double.infinity : 1200,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 48),
       child: Column(
         children: [
           // Card principal
@@ -209,6 +211,13 @@ class CerimoniaPage extends StatelessWidget {
           'Os convidados honrados receberão comunicação separada',
           isMobile,
         ),
+        const SizedBox(height: 16),
+        _buildInfoTile(
+          FontAwesomeIcons.car,
+          'Estacionamento',
+          'O local não oferece estacionamento. Mas, é possível estacionar na rua. Respeite as vagas dos moradores e a sinalização local.',
+          isMobile,
+        ),
       ],
     );
   }
@@ -277,7 +286,7 @@ class CerimoniaPage extends StatelessWidget {
     bool isMobile,
   ) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(icon, size: isMobile ? 20 : 22, color: AppTheme.primaryColor),
         const SizedBox(width: 16),

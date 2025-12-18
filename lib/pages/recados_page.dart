@@ -35,6 +35,7 @@ class _RecadosPageState extends State<RecadosPage> {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Container(
+    width: double.infinity,
       color: AppTheme.lightGray,
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
@@ -71,7 +72,8 @@ class _RecadosPageState extends State<RecadosPage> {
 
   Widget _buildMessageForm(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 100),
+      width: isMobile ? double.infinity : 1200,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 48),
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(isMobile ? 24 : 32),
@@ -168,7 +170,8 @@ class _RecadosPageState extends State<RecadosPage> {
 
   Widget _buildMessagesList(bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 100),
+      width: isMobile ? double.infinity : 1200,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 48),
       child: Column(
         children: [
           Row(

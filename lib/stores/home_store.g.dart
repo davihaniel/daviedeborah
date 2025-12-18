@@ -24,6 +24,42 @@ mixin _$HomeStore on _HomeStoreBase, Store {
     });
   }
 
+  late final _$showAppBarAtom = Atom(
+    name: '_HomeStoreBase.showAppBar',
+    context: context,
+  );
+
+  @override
+  bool get showAppBar {
+    _$showAppBarAtom.reportRead();
+    return super.showAppBar;
+  }
+
+  @override
+  set showAppBar(bool value) {
+    _$showAppBarAtom.reportWrite(value, super.showAppBar, () {
+      super.showAppBar = value;
+    });
+  }
+
+  late final _$lastOffsetAtom = Atom(
+    name: '_HomeStoreBase.lastOffset',
+    context: context,
+  );
+
+  @override
+  double get lastOffset {
+    _$lastOffsetAtom.reportRead();
+    return super.lastOffset;
+  }
+
+  @override
+  set lastOffset(double value) {
+    _$lastOffsetAtom.reportWrite(value, super.lastOffset, () {
+      super.lastOffset = value;
+    });
+  }
+
   late final _$_HomeStoreBaseActionController = ActionController(
     name: '_HomeStoreBase',
     context: context,
@@ -42,9 +78,23 @@ mixin _$HomeStore on _HomeStoreBase, Store {
   }
 
   @override
+  void onScroll(ScrollController scrollController) {
+    final _$actionInfo = _$_HomeStoreBaseActionController.startAction(
+      name: '_HomeStoreBase.onScroll',
+    );
+    try {
+      return super.onScroll(scrollController);
+    } finally {
+      _$_HomeStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
-now: ${now}
+now: ${now},
+showAppBar: ${showAppBar},
+lastOffset: ${lastOffset}
     ''';
   }
 }
