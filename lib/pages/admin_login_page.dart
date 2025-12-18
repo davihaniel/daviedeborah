@@ -58,7 +58,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         decoration: BoxDecoration(
           // Fundo com blur
           image: DecorationImage(
-            image: AssetImage(fundoAleatorio),
+            image: NetworkImage(fundoAleatorio),
             alignment: AlignmentGeometry.center,
             scale: 1.0,
             fit: BoxFit.cover,

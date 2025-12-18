@@ -34,5 +34,8 @@ abstract class _CasalStoreBase with Store {
   @action
   onChangePage(int index) {
     currentPage = index;
+    // resetar o timer ao trocar de página manualmente
+    autoScrollTimer.cancel();
+    startAutoScroll();
   }
 }
