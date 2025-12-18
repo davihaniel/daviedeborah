@@ -4,7 +4,7 @@ final rsvpLimitDate = DateTime(2026, 6, 12, 23, 59, 59);
 
 final countMaxGuests = 5;
 
-final rsvpEnable = false;
+final rsvpEnable = true;
 
 // Lista de imagens do carrossel
 List<String> galeryImages = [];

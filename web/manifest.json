@@ -1,11 +1,11 @@
 {
-    "name": "daviedeborah",
-    "short_name": "daviedeborah",
+    "name": "Davi & Deborah",
+    "short_name": "Davi & Deborah - Casamento",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#fffbf7",
+    "theme_color": "#bbc792",
+    "description": "Convite de casamento de Davi & Deborah",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
