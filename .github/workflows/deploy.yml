@@ -1,0 +1,70 @@
+name: Deploy Flutter Web
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      app-version: ${{ steps.increment-version.outputs.app-version }}
+      custom-version: ${{ steps.increment-version.outputs.custom-version }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Incrementa versão do app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        id: increment-version
+        run: |
+          content=$(cat "pubspec.yaml")
+          currentBuild=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          currentVersion=$(echo "$content" | grep -oP 'version: \K\d+\.\d+\.\d+')
+          IFS='.' read -r -a versionParts <<< "$currentVersion"
+          versionParts[2]=$((versionParts[2] + 1))
+          build_number=$(echo "$currentBuild" | cut -d'+' -f2)
+          new_build_number=$((build_number + 1))
+          newVersion="${versionParts[0]}.${versionParts[1]}.${versionParts[2]}+$new_build_number"
+          sed -i.bak "s/^version: .*/version: $newVersion/" pubspec.yaml
+          echo "Versão anterior: $currentBuild"
+          echo "Nova versão: $newVersion"
+  
+          echo "app-version=$newVersion" >> $GITHUB_OUTPUT
+          versionCustom=$(echo $newVersion | sed 's/+/-/g')
+          echo "Custom version: $versionCustom"
+          echo "custom-version=$versionCustom" >> $GITHUB_OUTPUT
+  
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add pubspec.yaml
+          git commit -m "Update de versão v${newVersion}"
+          git push origin
+          git tag "v${newVersion}"
+          git push origin "v${newVersion}"
+      
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.5'
+
+      - run: flutter pub get
+
+      - name: Create env/keys.json
+        run: |
+          mkdir -p env
+          echo '${{ secrets.ENV_JSON }}' > env/keys.json
+        shell: bash
+
+      - run: flutter build web --base-href "/daviedeborah/" --dart-define-from-file=env/keys.json
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web

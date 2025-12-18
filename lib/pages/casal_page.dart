@@ -4,6 +4,7 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../utils/full_galery.dart';
+import '../utils/variables.dart';
 import '../widgets/section_title.dart';
 import '../config/app_theme.dart';
 
@@ -116,7 +117,7 @@ class _CasalPageState extends State<CasalPage> {
               PageView.builder(
                 controller: casalStore.pageController,
                 onPageChanged: casalStore.onChangePage,
-                itemCount: casalStore.galeryImages.length,
+                itemCount: galeryImages.length,
                 itemBuilder: (context, index) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(16),
@@ -127,7 +128,7 @@ class _CasalPageState extends State<CasalPage> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => FullGaleryImages(
-                              imagens: casalStore.galeryImages,
+                              imagens: galeryImages,
                               index: index,
                               hero: 'galeryImage$index',
                             ),
@@ -137,7 +138,7 @@ class _CasalPageState extends State<CasalPage> {
                       child: Hero(
                         tag: 'galeryImage$index',
                         child: Image.asset(
-                          casalStore.galeryImages[index],
+                          galeryImages[index],
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
@@ -250,7 +251,7 @@ class _CasalPageState extends State<CasalPage> {
             return Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                casalStore.galeryImages.length,
+                galeryImages.length,
                 (index) => GestureDetector(
                   onTap: () {
                     casalStore.pageController.animateToPage(

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Paleta de cores romântica
-  static const Color primaryColor = Color(0xffa4b17b); // Rosa suave
+  static const Color primaryColor = Color.fromARGB(255, 187, 199, 146); // Rosa suave
   static const Color secondaryColor = Color(0xFF9B8A8A); // Marrom rosado
   static const Color accentColor = Color.fromARGB(255, 155, 112, 92); // Pêssego
   static const Color backgroundColor = Color(0xFFFFFBF7); // Off-white

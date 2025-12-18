@@ -17,45 +17,38 @@ mixin _$MensagemStore on _MensagemStore, Store {
     name: '_MensagemStore.totalMensagens',
   )).value;
 
-  late final _$mensagensAtom = Atom(
-    name: '_MensagemStore.mensagens',
+  late final _$recadosAtom = Atom(
+    name: '_MensagemStore.recados',
     context: context,
   );
 
   @override
-  ObservableList<Mensagem> get mensagens {
-    _$mensagensAtom.reportRead();
-    return super.mensagens;
+  ObservableList<Recado> get recados {
+    _$recadosAtom.reportRead();
+    return super.recados;
   }
 
   @override
-  set mensagens(ObservableList<Mensagem> value) {
-    _$mensagensAtom.reportWrite(value, super.mensagens, () {
-      super.mensagens = value;
+  set recados(ObservableList<Recado> value) {
+    _$recadosAtom.reportWrite(value, super.recados, () {
+      super.recados = value;
     });
   }
 
-  late final _$_MensagemStoreActionController = ActionController(
-    name: '_MensagemStore',
+  late final _$carregarRecadosAsyncAction = AsyncAction(
+    '_MensagemStore.carregarRecados',
     context: context,
   );
 
   @override
-  void adicionarMensagem(String nome, String mensagem) {
-    final _$actionInfo = _$_MensagemStoreActionController.startAction(
-      name: '_MensagemStore.adicionarMensagem',
-    );
-    try {
-      return super.adicionarMensagem(nome, mensagem);
-    } finally {
-      _$_MensagemStoreActionController.endAction(_$actionInfo);
-    }
+  Future<dynamic> carregarRecados() {
+    return _$carregarRecadosAsyncAction.run(() => super.carregarRecados());
   }
 
   @override
   String toString() {
     return '''
-mensagens: ${mensagens},
+recados: ${recados},
 totalMensagens: ${totalMensagens}
     ''';
   }

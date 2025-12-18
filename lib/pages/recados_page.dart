@@ -1,3 +1,4 @@
+import 'package:daviedeborah/models/recado.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,30 +38,40 @@ class _RecadosPageState extends State<RecadosPage> {
       color: AppTheme.lightGray,
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
-          children: [
-            const SectionTitle(
-              title: 'Recados',
-              subtitle: 'Deixe uma mensagem especial para nós',
-            ),
-            const SizedBox(height: 48),
-            
-            _buildMessageForm(context, isMobile),
-            
-            const SizedBox(height: 48),
-            
-            _buildMessagesList(isMobile),
-            
-            const SizedBox(height: 48),
-          ],
-        ),
+        children: [
+          const SectionTitle(
+            title: 'Recados',
+            subtitle: 'Deixe uma mensagem especial para nós',
+          ),
+          const SizedBox(height: 48),
+
+          _buildMessageForm(context, isMobile),
+
+          Observer(
+            builder: (_) {
+              if (_store.recados.isNotEmpty) {
+                return Column(
+                  children: [
+                    const SizedBox(height: 48),
+
+                    _buildMessagesList(isMobile),
+                  ],
+                );
+              } else {
+                return const SizedBox.shrink();
+              }
+            },
+          ),
+
+          const SizedBox(height: 48),
+        ],
+      ),
     );
   }
 
   Widget _buildMessageForm(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 24 : 100,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 100),
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(isMobile ? 24 : 32),
@@ -89,7 +100,7 @@ class _RecadosPageState extends State<RecadosPage> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Nome
                 TextFormField(
                   controller: _nomeController,
@@ -110,9 +121,9 @@ class _RecadosPageState extends State<RecadosPage> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Mensagem
                 TextFormField(
                   controller: _mensagemController,
@@ -135,18 +146,16 @@ class _RecadosPageState extends State<RecadosPage> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Botão
                 ElevatedButton.icon(
                   onPressed: () => _enviarMensagem(context),
                   icon: const Icon(FontAwesomeIcons.paperPlane, size: 16),
                   label: const Text('Enviar Recado'),
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isMobile ? 16 : 20,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: isMobile ? 16 : 20),
                   ),
                 ),
               ],
@@ -159,9 +168,7 @@ class _RecadosPageState extends State<RecadosPage> {
 
   Widget _buildMessagesList(bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 24 : 100,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 100),
       child: Column(
         children: [
           Row(
@@ -194,11 +201,12 @@ class _RecadosPageState extends State<RecadosPage> {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           Observer(
             builder: (_) {
-              final allMessages = _store.mensagens.reversed.toList();
-              final hasMoreMessages = allMessages.length > _initialMessagesCount;
+              final allMessages = _store.recados.reversed.toList();
+              final hasMoreMessages =
+                  allMessages.length > _initialMessagesCount;
               final messagesToShow = _isExpanded || !hasMoreMessages
                   ? allMessages
                   : allMessages.take(_initialMessagesCount).toList();
@@ -227,8 +235,8 @@ class _RecadosPageState extends State<RecadosPage> {
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                                 colors: [
-                                  AppTheme.lightGray.withOpacity(0.0),
-                                  AppTheme.lightGray.withOpacity(0.7),
+                                  AppTheme.lightGray.withValues(alpha: 0.0),
+                                  AppTheme.lightGray.withValues(alpha: 0.7),
                                   AppTheme.lightGray,
                                 ],
                               ),
@@ -278,9 +286,9 @@ class _RecadosPageState extends State<RecadosPage> {
     );
   }
 
-  Widget _buildMessageCard(Mensagem mensagem, bool isMobile) {
+  Widget _buildMessageCard(Recado recado, bool isMobile) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    
+
     return Card(
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 16 : 20),
@@ -303,7 +311,7 @@ class _RecadosPageState extends State<RecadosPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        mensagem.nome,
+                        recado.nome,
                         style: GoogleFonts.lato(
                           fontSize: isMobile ? 16 : 18,
                           fontWeight: FontWeight.w600,
@@ -311,7 +319,7 @@ class _RecadosPageState extends State<RecadosPage> {
                         ),
                       ),
                       Text(
-                        dateFormat.format(mensagem.data),
+                        dateFormat.format(recado.datCriacao.toLocal()),
                         style: GoogleFonts.lato(
                           fontSize: isMobile ? 12 : 13,
                           color: AppTheme.lightTextColor,
@@ -324,7 +332,7 @@ class _RecadosPageState extends State<RecadosPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              mensagem.mensagem,
+              recado.mensagem,
               style: GoogleFonts.lato(
                 fontSize: isMobile ? 14 : 15,
                 color: AppTheme.textColor,
@@ -337,38 +345,67 @@ class _RecadosPageState extends State<RecadosPage> {
     );
   }
 
-  void _enviarMensagem(BuildContext context) {
+  void _enviarMensagem(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
-      _store.adicionarMensagem(
-        _nomeController.text,
-        _mensagemController.text,
-      );
-      
-      _nomeController.clear();
-      _mensagemController.clear();
-      _formKey.currentState!.reset();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(FontAwesomeIcons.circleCheck, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Mensagem enviada com sucesso!\nEla aparecerá aqui em breve após moderação.',
-                  style: GoogleFonts.lato(),
+      try {
+        await _store.adicionarMensagem(
+          _nomeController.text,
+          _mensagemController.text,
+        );
+
+        _nomeController.clear();
+        _mensagemController.clear();
+        _formKey.currentState!.reset();
+
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(FontAwesomeIcons.circleCheck, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Mensagem enviada com sucesso!\nEla aparecerá aqui em breve após moderação.',
+                    style: GoogleFonts.lato(),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            backgroundColor: AppTheme.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-          backgroundColor: AppTheme.primaryColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  FontAwesomeIcons.circleExclamation,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Erro ao enviar mensagem. Por favor, tente novamente mais tarde.',
+                    style: GoogleFonts.lato(),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
   }
 }

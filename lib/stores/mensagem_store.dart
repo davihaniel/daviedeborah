@@ -1,45 +1,37 @@
+import 'package:daviedeborah/models/recado.dart';
 import 'package:mobx/mobx.dart';
+
+import '../services/supabase_service.dart';
 
 part 'mensagem_store.g.dart';
 
+// ignore: library_private_types_in_public_api
 class MensagemStore = _MensagemStore with _$MensagemStore;
 
-class Mensagem {
-  final String nome;
-  final String mensagem;
-  final DateTime data;
-
-  Mensagem({
-    required this.nome,
-    required this.mensagem,
-    required this.data,
-  });
-}
-
 abstract class _MensagemStore with Store {
+  _MensagemStore() {
+    carregarRecados();
+  }
+
   @observable
-  ObservableList<Mensagem> mensagens = ObservableList<Mensagem>.of([
-    Mensagem(
-      nome: 'Maria Silva',
-      mensagem: 'Parabéns ao casal! Que Deus abençoe essa união! ❤️',
-      data: DateTime.now().subtract(const Duration(days: 5)),
-    ),
-    Mensagem(
-      nome: 'João Santos',
-      mensagem: 'Felicidades! Vocês são perfeitos juntos!',
-      data: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-  ]);
+  ObservableList<Recado> recados = ObservableList<Recado>();
 
   @action
-  void adicionarMensagem(String nome, String mensagem) {
-    mensagens.add(Mensagem(
-      nome: nome,
-      mensagem: mensagem,
-      data: DateTime.now(),
-    ));
+  Future carregarRecados() async {
+    final supabaseService = SupabaseService();
+    final response = await supabaseService.obterRecadosAprovados();
+    recados = ObservableList<Recado>.of(response);
+  }
+
+  Future<void> adicionarMensagem(String nome, String mensagem) async {
+    final supabaseService = SupabaseService();
+    try {
+      await supabaseService.criarRecado(nome: nome, mensagem: mensagem);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   @computed
-  int get totalMensagens => mensagens.length;
+  int get totalMensagens => recados.length;
 }

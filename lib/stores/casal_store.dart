@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobx/mobx.dart';
+
+import '../utils/variables.dart';
 part 'casal_store.g.dart';
 
 // ignore: library_private_types_in_public_api
@@ -14,17 +16,6 @@ abstract class _CasalStoreBase with Store {
   @observable
   int currentPage = 0;
   
-  // Lista de imagens do carrossel
-  final List<String> galeryImages = [
-    'assets/images/fundo1.jpg',
-    'assets/images/carrossel_1.jpeg',
-    'assets/images/carrossel_2.jpeg',
-    'assets/images/carrossel_3.jpeg',
-    'assets/images/carrossel_4.jpeg',
-    'assets/images/carrossel_5.jpeg',
-    'assets/images/carrossel_6.jpg',
-    'assets/images/carrossel_7.jpg',
-  ];
 
   @action
   void startAutoScroll() {

@@ -25,6 +25,9 @@ class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
   final homeStore = HomeStore();
   final rsvpLimit = DateTime.now().isAfter(rsvpLimitDate);
+
+  late String fundoAleatorio;
+
   final Map<String, GlobalKey> _sectionKeys = {
     'home': GlobalKey(),
     'casal': GlobalKey(),
@@ -49,7 +52,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    fundoAleatorio = getRandomBackgroundImage();
     homeStore.startTimer();
+  }
+
+  getRandomBackgroundImage(){
+    galeryImages.shuffle();
+    return galeryImages.first;
   }
 
   @override
@@ -125,16 +134,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHeroSection(BuildContext context, bool isMobile) {
+  final tamanhoTela = MediaQuery.of(context).size.height;
     return Container(
-      height: isMobile ? 500 : 600,
+      height: tamanhoTela * 0.95,
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: const AssetImage('assets/images/fundo1.jpg'),
+          image: AssetImage(fundoAleatorio),
           alignment: AlignmentGeometry.center,
           scale: 1.0,
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.black.withValues(alpha: 0.3),
+            Colors.black.withValues(alpha: 0.4),
             BlendMode.darken,
           ),
         ),
@@ -206,7 +216,7 @@ class _HomePageState extends State<HomePage> {
                       '${weddingDate.dataNomeMes} • ${weddingDate.hora}',
                       style: GoogleFonts.lato(
                         fontSize: isMobile ? 18 : 20,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         color: AppTheme.lightGray,
                       ),
                     ),

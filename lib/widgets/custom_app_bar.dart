@@ -14,14 +14,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final isMobile = MediaQuery.of(context).size.width < 900;
 
     return AppBar(
+      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
       title: GestureDetector(
         onTap: () => onNavigate('home'),
         // & menor que D D
         child: Text(
           'D&D',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
       actions: isMobile
@@ -36,9 +37,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           : [
               _NavButton(label: 'Início', onTap: () => onNavigate('home')),
               _NavButton(label: 'O Casal', onTap: () => onNavigate('casal')),
-              _NavButton(label: 'Cerimônia', onTap: () => onNavigate('cerimonia')),
-              _NavButton(label: 'Recepção', onTap: () => onNavigate('recepcao')),
-              _NavButton(label: 'Presentes', onTap: () => onNavigate('presentes')),
+              _NavButton(
+                label: 'Cerimônia',
+                onTap: () => onNavigate('cerimonia'),
+              ),
+              _NavButton(
+                label: 'Recepção',
+                onTap: () => onNavigate('recepcao'),
+              ),
+              _NavButton(
+                label: 'Presentes',
+                onTap: () => onNavigate('presentes'),
+              ),
               _NavButton(label: 'Recados', onTap: () => onNavigate('recados')),
               const SizedBox(width: 16),
             ],
@@ -56,35 +66,53 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             child: Text(
               'Menu',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(color: Colors.white),
             ),
           ),
-          _DrawerItem(label: 'Início', onTap: () {
-            Navigator.pop(context);
-            onNavigate('home');
-          }),
-          _DrawerItem(label: 'O Casal', onTap: () {
-            Navigator.pop(context);
-            onNavigate('casal');
-          }),
-          _DrawerItem(label: 'Cerimônia', onTap: () {
-            Navigator.pop(context);
-            onNavigate('cerimonia');
-          }),
-          _DrawerItem(label: 'Recepção', onTap: () {
-            Navigator.pop(context);
-            onNavigate('recepcao');
-          }),
-          _DrawerItem(label: 'Presentes', onTap: () {
-            Navigator.pop(context);
-            onNavigate('presentes');
-          }),
-          _DrawerItem(label: 'Recados', onTap: () {
-            Navigator.pop(context);
-            onNavigate('recados');
-          }),
+          _DrawerItem(
+            label: 'Início',
+            onTap: () {
+              Navigator.pop(context);
+              onNavigate('home');
+            },
+          ),
+          _DrawerItem(
+            label: 'O Casal',
+            onTap: () {
+              Navigator.pop(context);
+              onNavigate('casal');
+            },
+          ),
+          _DrawerItem(
+            label: 'Cerimônia',
+            onTap: () {
+              Navigator.pop(context);
+              onNavigate('cerimonia');
+            },
+          ),
+          _DrawerItem(
+            label: 'Recepção',
+            onTap: () {
+              Navigator.pop(context);
+              onNavigate('recepcao');
+            },
+          ),
+          _DrawerItem(
+            label: 'Presentes',
+            onTap: () {
+              Navigator.pop(context);
+              onNavigate('presentes');
+            },
+          ),
+          _DrawerItem(
+            label: 'Recados',
+            onTap: () {
+              Navigator.pop(context);
+              onNavigate('recados');
+            },
+          ),
         ],
       ),
     );
@@ -95,10 +123,7 @@ class _NavButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _NavButton({
-    required this.label,
-    required this.onTap,
-  });
+  const _NavButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -120,16 +145,10 @@ class _DrawerItem extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _DrawerItem({
-    required this.label,
-    required this.onTap,
-  });
+  const _DrawerItem({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(label),
-      onTap: onTap,
-    );
+    return ListTile(title: Text(label), onTap: onTap);
   }
 }

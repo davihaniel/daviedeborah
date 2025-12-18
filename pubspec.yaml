@@ -46,6 +46,9 @@ dependencies:
   intl: ^0.20.2
   photo_view: ^0.15.0
   web: ^1.1.1
+  
+  # Supabase
+  supabase_flutter: ^2.12.0
 
 dev_dependencies:
   flutter_test:

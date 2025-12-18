@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/section_title.dart';
 import '../config/app_theme.dart';
 import '../stores/rsvp_store.dart';
+import '../services/supabase_service.dart';
 
 // Máscara de telefone customizada
 class PhoneMaskFormatter extends TextInputFormatter {
@@ -61,10 +62,12 @@ class RsvpPage extends StatefulWidget {
 
 class _RsvpPageState extends State<RsvpPage> {
   final RsvpStore _store = RsvpStore();
+  final SupabaseService _supabaseService = SupabaseService();
   final _formKey = GlobalKey<FormState>();
   final List<TextEditingController> _guestNameCtrls = [];
   final List<TextEditingController> _guestAgeCtrls = [];
   final List<bool> _guestIsChild = [];
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -233,27 +236,23 @@ class _RsvpPageState extends State<RsvpPage> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Wrap(
+                        Column(
                           children: [
-                            Expanded(
-                              child: RadioListTile<bool>(
-                                title: const Text('Sim, estarei lá!'),
-                                value: true,
-                                groupValue: _store.confirmado,
-                                onChanged: (value) =>
-                                    _store.setConfirmado(value!),
-                                activeColor: AppTheme.primaryColor,
-                              ),
+                            RadioListTile<bool>(
+                              title: const Text('Sim, estarei lá!'),
+                              value: true,
+                              groupValue: _store.confirmado,
+                              onChanged: (value) =>
+                                  _store.setConfirmado(value!),
+                              activeColor: AppTheme.primaryColor,
                             ),
-                            Expanded(
-                              child: RadioListTile<bool>(
-                                title: const Text('Não poderei ir'),
-                                value: false,
-                                groupValue: _store.confirmado,
-                                onChanged: (value) =>
-                                    _store.setConfirmado(value!),
-                                activeColor: AppTheme.primaryColor,
-                              ),
+                            RadioListTile<bool>(
+                              title: const Text('Não poderei ir'),
+                              value: false,
+                              groupValue: _store.confirmado,
+                              onChanged: (value) =>
+                                  _store.setConfirmado(value!),
+                              activeColor: AppTheme.primaryColor,
                             ),
                           ],
                         ),
@@ -346,7 +345,7 @@ class _RsvpPageState extends State<RsvpPage> {
                 // Botão de envio
                 Observer(
                   builder: (_) => ElevatedButton(
-                    onPressed: _store.formularioValido
+                    onPressed: (_store.formularioValido && !_isSubmitting)
                         ? () => _submitForm(context)
                         : null,
                     style: ElevatedButton.styleFrom(
@@ -354,13 +353,24 @@ class _RsvpPageState extends State<RsvpPage> {
                         vertical: isMobile ? 16 : 20,
                       ),
                     ),
-                    child: Text(
-                      'Confirmar',
-                      style: GoogleFonts.lato(
-                        fontSize: isMobile ? 16 : 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: _isSubmitting
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            'Confirmar',
+                            style: GoogleFonts.lato(
+                              fontSize: isMobile ? 16 : 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
 
@@ -476,7 +486,7 @@ class _RsvpPageState extends State<RsvpPage> {
     );
   }
 
-  void _submitForm(BuildContext context) {
+  void _submitForm(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       // validação adicional de convidados quando confirmado
       if (_store.confirmado) {
@@ -504,75 +514,118 @@ class _RsvpPageState extends State<RsvpPage> {
           }
         }
       }
-      // Aqui você normalmente enviaria os dados para um servidor
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                _store.confirmado
-                    ? FontAwesomeIcons.circleCheck
-                    : FontAwesomeIcons.circleInfo,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _store.confirmado ? 'Confirmado!' : 'Recebido!',
-                  style: GoogleFonts.playfairDisplay(
-                    fontWeight: FontWeight.w600,
+
+      // Iniciar carregamento
+      setState(() => _isSubmitting = true);
+
+      try {
+        // Preparar dados dos convidados
+        final convidados = <Map<String, dynamic>>[];
+        if (_store.confirmado) {
+          for (var i = 0; i < _store.numeroPessoas; i++) {
+            final nome = _guestNameCtrls[i].text.trim();
+            final idade =
+                _guestIsChild[i] ? int.tryParse(_guestAgeCtrls[i].text) : null;
+            convidados.add({'nome': nome, 'idade': idade});
+          }
+        }
+
+        // Criar anfitrião com convidados
+        await _supabaseService.criarAnfitriaComConvidados(
+          nome: _store.nome,
+          numero: _store.telefone,
+          convidados: convidados,
+          confirmacao: _store.confirmado,
+        );
+
+        if (!mounted) return;
+
+        setState(() => _isSubmitting = false);
+
+        // Mostrar dialog de sucesso
+        if(!context.mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  _store.confirmado
+                      ? FontAwesomeIcons.circleCheck
+                      : FontAwesomeIcons.circleInfo,
+                  color: AppTheme.primaryColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _store.confirmado ? 'Confirmado!' : 'Recebido!',
+                    style: GoogleFonts.playfairDisplay(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+              ],
+            ),
+            content: _store.confirmado
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Obrigado por confirmar sua presença, ${_store.nome}!',
+                        style: GoogleFonts.lato(),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Convidados:',
+                        style: GoogleFonts.lato(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      ...List.generate(_store.numeroPessoas, (i) {
+                        final nome = _guestNameCtrls[i].text.trim();
+                        final idade =
+                            int.tryParse(_guestAgeCtrls[i].text.trim());
+                        final crianca = idade != null && idade <= 6;
+                        final detalheIdade =
+                            idade == null ? '' : ' - $idade anos';
+                        return Text(
+                          '• $nome$detalheIdade ${crianca ? "(criança)" : ""}',
+                          style: GoogleFonts.lato(),
+                        );
+                      }),
+                    ],
+                  )
+                : Text(
+                    'Sentiremos sua falta, ${_store.nome}. Obrigado por nos avisar.',
+                    style: GoogleFonts.lato(),
+                  ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _store.limpar();
+                  _formKey.currentState!.reset();
+                  _syncGuestControllersLength(_store.numeroPessoas);
+                },
+                child: const Text('OK'),
               ),
             ],
           ),
-          content: _store.confirmado
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Obrigado por confirmar sua presença, ${_store.nome}!',
-                      style: GoogleFonts.lato(),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Convidados:',
-                      style: GoogleFonts.lato(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 8),
-                    ...List.generate(_store.numeroPessoas, (i) {
-                      final nome = _guestNameCtrls[i].text.trim();
-                      final idade = int.tryParse(_guestAgeCtrls[i].text.trim());
-                      final crianca = idade != null && idade <= 6;
-                      final detalheIdade = idade == null
-                          ? ''
-                          : ' - $idade anos';
-                      return Text(
-                        '• $nome$detalheIdade ${crianca ? "(criança)" : ""}',
-                        style: GoogleFonts.lato(),
-                      );
-                    }),
-                  ],
-                )
-              : Text(
-                  'Sentiremos sua falta, ${_store.nome}. Obrigado por nos avisar.',
-                  style: GoogleFonts.lato(),
-                ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _store.limpar();
-                _formKey.currentState!.reset();
-                _syncGuestControllersLength(_store.numeroPessoas);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+        );
+      } catch (e) {
+        if (!mounted) return;
+
+        setState(() => _isSubmitting = false);
+
+        // Mostrar erro
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao enviar formulário: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

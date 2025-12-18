@@ -106,7 +106,7 @@ class PresentesPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Titular: Deborah Pires Fernandes - PicPay',
+                'Titular: Davi Haniel Reis Silva - Nubank SA.',
                 style: GoogleFonts.lato(
                   fontSize: isMobile ? 13 : 14,
                   color: AppTheme.lightTextColor,
