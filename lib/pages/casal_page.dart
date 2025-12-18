@@ -201,6 +201,8 @@ class _CasalPageState extends State<CasalPage> {
                           child: Image(
                             image: _providerFromPath(galeryImages[index]),
                             fit: BoxFit.cover,
+                            filterQuality: FilterQuality.low,
+                            gaplessPlayback: true,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
                                 color: AppTheme.accentColor.withValues(alpha: 0.3),

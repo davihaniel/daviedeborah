@@ -3,6 +3,7 @@ import 'package:daviedeborah/pages/admin_page.dart';
 import 'package:daviedeborah/services/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter/painting.dart' as painting;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'config/app_theme.dart';
 
@@ -20,6 +21,11 @@ Future<String> obterVersaoApp() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Ajusta limites do cache de imagens para evitar estouro no mobile
+  try {
+    painting.PaintingBinding.instance.imageCache.maximumSize = 100; // até 100 imagens
+    painting.PaintingBinding.instance.imageCache.maximumSizeBytes = 60 << 20; // ~60MB
+  } catch (_) {}
   await initializeDateFormatting('pt_BR', null);
   final supabaseService = SupabaseService();
   await supabaseService.initialize();

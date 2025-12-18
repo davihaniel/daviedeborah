@@ -36,8 +36,9 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   }
 
   getRandomBackgroundImage() {
-    galeryImages.shuffle();
-    return galeryImages.first;
+  final list = galeryImages;
+    list.shuffle();
+    return list.isNotEmpty ? list.first : '';
   }
 
   @override

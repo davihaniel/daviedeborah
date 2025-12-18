@@ -56,21 +56,38 @@ class _HomePageState extends State<HomePage> {
     fundoAleatorio = getRandomBackgroundImage();
     _store.startTimer();
     _scrollController.addListener(() => _store.onScroll(_scrollController));
-    
-    // Pré-carregar imagens no background com delay para não bloquear a UI
-    Future.delayed(const Duration(milliseconds: 500), () {
-      ImageCacheService().precacheImagesWithDelay(
-        // ignore: use_build_context_synchronously
-        context,
-        galeryImages,
-        delayBetween: const Duration(milliseconds: 150),
-      );
+
+    // Inicia pré-carregamento de forma segura após o primeiro frame,
+    // limitando a quantidade em mobile para evitar estouro de memória.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final screenWidth = MediaQuery.of(context).size.width;
+      final isMobile = screenWidth < 600;
+      final imagens = List<String>.from(galeryImages);
+
+      if (imagens.isEmpty) return;
+
+      if (isMobile) {
+        // Em mobile: pré-carrega só as 3 primeiras, com intervalo maior
+        ImageCacheService().precacheImagesWithDelay(
+          context,
+          imagens.take(3).toList(),
+          delayBetween: const Duration(milliseconds: 300),
+        );
+      } else {
+        // Em telas maiores: pré-carrega até 10 imagens de forma gradual
+        ImageCacheService().precacheImagesWithDelay(
+          context,
+          imagens.take(10).toList(),
+          delayBetween: const Duration(milliseconds: 150),
+        );
+      }
     });
   }
 
   getRandomBackgroundImage() {
-    galeryImages.shuffle();
-    return galeryImages.isNotEmpty ? galeryImages.first : '';
+    final list = galeryImages;
+    list.shuffle();
+    return list.isNotEmpty ? list.first : '';
   }
 
   @override
