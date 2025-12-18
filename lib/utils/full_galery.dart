@@ -52,8 +52,13 @@ class _FullGaleryImagesState extends State<FullGaleryImages> {
     final previousIndex =
         currentIndex == 0 ? widget.imagens.length - 1 : currentIndex - 1;
 
-    precacheImage(AssetImage(widget.imagens[nextIndex]), context);
-    precacheImage(AssetImage(widget.imagens[previousIndex]), context);
+    precacheImage(_providerFromPath(widget.imagens[nextIndex]), context);
+    precacheImage(_providerFromPath(widget.imagens[previousIndex]), context);
+  }
+
+  ImageProvider _providerFromPath(String path) {
+    if (path.startsWith('http')) return NetworkImage(path);
+    return AssetImage(path);
   }
 
   @override
@@ -139,7 +144,7 @@ class _FullGaleryImagesState extends State<FullGaleryImages> {
   PhotoViewGalleryPageOptions _buildItem(BuildContext context, int index) {
     final item = widget.imagens[index];
     return PhotoViewGalleryPageOptions(
-      imageProvider: AssetImage(item),
+      imageProvider: _providerFromPath(item),
       initialScale: PhotoViewComputedScale.contained,
       heroAttributes: PhotoViewHeroAttributes(tag: widget.hero),
       minScale: PhotoViewComputedScale.contained,

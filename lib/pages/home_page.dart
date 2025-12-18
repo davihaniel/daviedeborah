@@ -70,7 +70,7 @@ class _HomePageState extends State<HomePage> {
 
   getRandomBackgroundImage() {
     galeryImages.shuffle();
-    return galeryImages.first;
+    return galeryImages.isNotEmpty ? galeryImages.first : '';
   }
 
   @override
@@ -269,7 +269,9 @@ class _HomePageState extends State<HomePage> {
       height: tamanhoTela * 0.95,
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: AssetImage(fundoAleatorio),
+          image: fundoAleatorio.startsWith('http')
+              ? NetworkImage(fundoAleatorio)
+              : AssetImage(fundoAleatorio) as ImageProvider,
           alignment: AlignmentGeometry.center,
           scale: 1.0,
           fit: BoxFit.cover,

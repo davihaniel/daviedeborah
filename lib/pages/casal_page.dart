@@ -86,8 +86,13 @@ class _CasalPageState extends State<CasalPage> {
     final previousIndex =
         currentIndex == 0 ? galeryImages.length - 1 : currentIndex - 1;
 
-    precacheImage(AssetImage(galeryImages[nextIndex]), context);
-    precacheImage(AssetImage(galeryImages[previousIndex]), context);
+    precacheImage(_providerFromPath(galeryImages[nextIndex]), context);
+    precacheImage(_providerFromPath(galeryImages[previousIndex]), context);
+  }
+
+  ImageProvider _providerFromPath(String path) {
+    if (path.startsWith('http')) return NetworkImage(path);
+    return AssetImage(path);
   }
 
   @override
@@ -193,8 +198,8 @@ class _CasalPageState extends State<CasalPage> {
                         },
                         child: Hero(
                           tag: 'galeryImage$index',
-                          child: Image.asset(
-                            galeryImages[index],
+                          child: Image(
+                            image: _providerFromPath(galeryImages[index]),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(

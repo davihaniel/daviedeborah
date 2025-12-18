@@ -10,12 +10,19 @@ class ImageCacheService {
 
   ImageCacheService._internal();
 
-  /// Pré-carrega todas as imagens da galeria no background
-  /// Deve ser chamado na app initialization (main.dart)
-  Future<void> precacheAllImages(BuildContext context, List<String> imagePaths) async {
+  ImageProvider _providerFromPath(String path) {
+    if (path.startsWith('http')) return NetworkImage(path);
+    return AssetImage(path);
+  }
+
+  /// Pré-carrega todas as imagens da galeria no background (asset ou URL)
+  Future<void> precacheAllImages(
+    BuildContext context,
+    List<String> imagePaths,
+  ) async {
     try {
       for (final path in imagePaths) {
-        precacheImage(AssetImage(path), context);
+        precacheImage(_providerFromPath(path), context);
       }
       debugPrint('✅ Imagens pré-carregadas com sucesso');
     } catch (e) {
@@ -32,7 +39,7 @@ class ImageCacheService {
     try {
       for (int i = 0; i < imagePaths.length; i++) {
         // ignore: use_build_context_synchronously
-        precacheImage(AssetImage(imagePaths[i]), context);
+        precacheImage(_providerFromPath(imagePaths[i]), context);
         if (i < imagePaths.length - 1) {
           await Future.delayed(delayBetween);
         }
@@ -101,6 +108,7 @@ class _ImagePrecacheWidgetState extends State<ImagePrecacheWidget> {
     );
     setState(() => precachingComplete = true);
   }
+
   @override
   Widget build(BuildContext context) {
     return widget.child;
@@ -109,7 +117,7 @@ class _ImagePrecacheWidgetState extends State<ImagePrecacheWidget> {
 
 /// Widget que carrega imagem com fade animation
 class FadedAssetImage extends StatefulWidget {
-  final String assetPath;
+  final String assetPath; // agora aceita URL ou asset
   final BoxFit fit;
   final Duration duration;
   final double? width;
@@ -142,7 +150,11 @@ class _FadedAssetImageState extends State<FadedAssetImage>
     _animation = Tween<double>(begin: 0, end: 1).animate(_controller);
 
     // Precache a imagem
-    precacheImage(AssetImage(widget.assetPath), context).then((_) {
+    final ImageProvider<Object> provider = widget.assetPath.startsWith('http')
+        ? NetworkImage(widget.assetPath)
+        : AssetImage(widget.assetPath);
+
+    precacheImage(provider, context).then((_) {
       _controller.forward();
     });
   }
@@ -155,10 +167,14 @@ class _FadedAssetImageState extends State<FadedAssetImage>
 
   @override
   Widget build(BuildContext context) {
+    final ImageProvider<Object> provider = widget.assetPath.startsWith('http')
+        ? NetworkImage(widget.assetPath)
+        : AssetImage(widget.assetPath);
+
     return FadeTransition(
       opacity: _animation,
-      child: Image.asset(
-        widget.assetPath,
+      child: Image(
+        image: provider,
         fit: widget.fit,
         width: widget.width,
         height: widget.height,
@@ -167,9 +183,7 @@ class _FadedAssetImageState extends State<FadedAssetImage>
             width: widget.width,
             height: widget.height,
             color: Colors.grey.shade200,
-            child: const Center(
-              child: Icon(Icons.image_not_supported),
-            ),
+            child: const Center(child: Icon(Icons.image_not_supported)),
           );
         },
       ),
