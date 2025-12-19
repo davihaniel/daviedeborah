@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:daviedeborah/stores/casal_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
@@ -5,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:ui_web' as ui;
 import 'package:web/web.dart' as web;
+import '../main.dart';
 import '../utils/full_galery.dart';
-import '../utils/variables.dart';
 import '../widgets/section_title.dart';
 import '../config/app_theme.dart';
 
@@ -60,7 +61,7 @@ class _CasalPageState extends State<CasalPage> {
 
   void _nextPage() {
     final currentPage = casalStore.currentPage;
-    final nextPage = (currentPage + 1) % galeryImages.length;
+    final nextPage = (currentPage + 1) % appSettings.galeryImages.length;
     casalStore.pageController.animateToPage(
       nextPage,
       duration: const Duration(milliseconds: 400),
@@ -71,7 +72,7 @@ class _CasalPageState extends State<CasalPage> {
   void _previousPage() {
     final currentPage = casalStore.currentPage;
     final previousPage = currentPage == 0
-        ? galeryImages.length - 1
+        ? appSettings.galeryImages.length - 1
         : currentPage - 1;
     casalStore.pageController.animateToPage(
       previousPage,
@@ -82,16 +83,25 @@ class _CasalPageState extends State<CasalPage> {
 
   /// Pré-carrega próxima e anterior imagem do carrossel
   void _precacheNextImage(int currentIndex) {
-    final nextIndex = (currentIndex + 1) % galeryImages.length;
-    final previousIndex =
-        currentIndex == 0 ? galeryImages.length - 1 : currentIndex - 1;
+    final total = appSettings.galeryImages.length;
+    if (total == 0) return;
 
-    precacheImage(_providerFromPath(galeryImages[nextIndex]), context);
-    precacheImage(_providerFromPath(galeryImages[previousIndex]), context);
+    final nextIndex = (currentIndex + 1) % total;
+    final previousIndex = currentIndex == 0 ? total - 1 : currentIndex - 1;
+
+    final nextProvider = _providerFromPath(appSettings.galeryImages[nextIndex]);
+    final prevProvider = _providerFromPath(appSettings.galeryImages[previousIndex]);
+
+    precacheImage(nextProvider, context).catchError((e) {
+      debugPrint('❌ Erro ao pré-carregar próxima imagem: $e');
+    });
+    precacheImage(prevProvider, context).catchError((e) {
+      debugPrint('❌ Erro ao pré-carregar imagem anterior: $e');
+    });
   }
 
   ImageProvider _providerFromPath(String path) {
-    if (path.startsWith('http')) return NetworkImage(path);
+    if (path.startsWith('http')) return CachedNetworkImageProvider(path);
     return AssetImage(path);
   }
 
@@ -177,7 +187,7 @@ class _CasalPageState extends State<CasalPage> {
                   return PageView.builder(
                     controller: casalStore.pageController,
                     onPageChanged: casalStore.onChangePage,
-                    itemCount: galeryImages.length,
+                    itemCount: appSettings.galeryImages.length,
                     itemBuilder: (context, index) {
                       // Pré-carregar próxima e anterior imagem
                       _precacheNextImage(index);
@@ -189,7 +199,7 @@ class _CasalPageState extends State<CasalPage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => FullGaleryImages(
-                                imagens: galeryImages,
+                                imagens: appSettings.galeryImages,
                                 index: index,
                                 hero: 'galeryImage$index',
                               ),
@@ -199,7 +209,7 @@ class _CasalPageState extends State<CasalPage> {
                         child: Hero(
                           tag: 'galeryImage$index',
                           child: Image(
-                            image: _providerFromPath(galeryImages[index]),
+                            image: _providerFromPath( appSettings.galeryImages[index]),
                             fit: BoxFit.cover,
                             filterQuality: FilterQuality.low,
                             gaplessPlayback: true,
@@ -304,7 +314,7 @@ class _CasalPageState extends State<CasalPage> {
           spacing: 12,
           runSpacing: 7,
           children: List.generate(
-            galeryImages.length,
+            appSettings.galeryImages.length,
             (index) => InkWell(
               borderRadius: BorderRadius.circular(6),
               onTap: () {

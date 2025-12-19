@@ -1,13 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:daviedeborah/stores/home_store.dart';
 import 'package:daviedeborah/utils/extensions.dart';
-import 'package:daviedeborah/services/image_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../main.dart';
-import '../utils/variables.dart';
 import '../config/app_theme.dart';
+import '../widgets/section_title.dart';
 import 'casal_page.dart';
 import 'cerimonia_page.dart';
 import 'recepcao_page.dart';
@@ -25,7 +25,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
   final _store = HomeStore();
-  final rsvpLimit = DateTime.now().isAfter(rsvpLimitDate);
+  final rsvpLimit = DateTime.now().isAfter(appSettings.rsvpLimitDate);
 
   late String fundoAleatorio;
 
@@ -53,16 +53,16 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fundoAleatorio = getRandomBackgroundImage();
+    fundoAleatorio = appSettings.getRandomBackgroundImage();
     _store.startTimer();
     _scrollController.addListener(() => _store.onScroll(_scrollController));
 
     // Inicia pré-carregamento de forma segura após o primeiro frame,
     // limitando a quantidade em mobile para evitar estouro de memória.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    /*WidgetsBinding.instance.addPostFrameCallback((_) {
       final screenWidth = MediaQuery.of(context).size.width;
       final isMobile = screenWidth < 600;
-      final imagens = List<String>.from(galeryImages);
+      final imagens = List<String>.from(appSettings.galeryImages);
 
       if (imagens.isEmpty) return;
 
@@ -81,14 +81,9 @@ class _HomePageState extends State<HomePage> {
           delayBetween: const Duration(milliseconds: 150),
         );
       }
-    });
+    });*/
   }
 
-  getRandomBackgroundImage() {
-    final list = galeryImages;
-    list.shuffle();
-    return list.isNotEmpty ? list.first : '';
-  }
 
   @override
   void dispose() {
@@ -96,6 +91,54 @@ class _HomePageState extends State<HomePage> {
     _scrollController.removeListener(() => _store.onScroll(_scrollController));
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // Método auxiliar para envolver seções com cor de fundo alternada
+  List<Widget> _buildSections(bool isMobile) {
+    final sections = [
+      // Hero Section
+      Container(
+        key: _sectionKeys['home'],
+        child: _buildHeroSection(context, isMobile),
+      ),
+      // Versiculo
+      _buildVersiculo(isMobile),
+      // Mensagem dos Noivos
+      _buildMensagemNoivos(isMobile),
+      // Contador de dias
+      Observer(
+        builder: (_) {
+          return _buildCountdownSection(isMobile, _store.now);
+        },
+      ),
+      // O Casal Section
+      Container(key: _sectionKeys['casal'], child: const CasalPage()),
+      // Cerimônia Section
+      Container(key: _sectionKeys['cerimonia'], child: const CerimoniaPage()),
+      // Recepção Section
+      Container(key: _sectionKeys['recepcao'], child: const RecepcaoPage()),
+      // Presentes Section
+      Container(key: _sectionKeys['presentes'], child: const PresentesPage()),
+      if (!rsvpLimit && appSettings.rsvpEnable)
+        // RSVP Section
+        Container(key: _sectionKeys['rsvp'], child: const RsvpPage()),
+      // Recados Section
+      Container(key: _sectionKeys['recados'], child: const RecadosPage()),
+      // Footer
+      _buildFooter(isMobile),
+    ];
+
+    return sections.asMap().entries.map((entry) {
+      final index = entry.key;
+      final widget = entry.value;
+      final hasBackground = index.isOdd;
+
+      return Container(
+        width: double.infinity,
+        color: hasBackground ? AppTheme.lightGray : null,
+        child: widget,
+      );
+    }).toList();
   }
 
   @override
@@ -163,61 +206,7 @@ class _HomePageState extends State<HomePage> {
                   ],
           ),
           // Body content
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                // Hero Section
-                Container(
-                  key: _sectionKeys['home'],
-                  child: _buildHeroSection(context, isMobile),
-                ),
-
-                // Mensagem dos Noivos
-                _buildMensagemNoivos(isMobile),
-
-                // Contador de dias
-                Observer(
-                  builder: (_) {
-                    return _buildCountdownSection(isMobile, _store.now);
-                  },
-                ),
-
-                // O Casal Section
-                Container(key: _sectionKeys['casal'], child: const CasalPage()),
-
-                // Cerimônia Section
-                Container(
-                  key: _sectionKeys['cerimonia'],
-                  child: const CerimoniaPage(),
-                ),
-
-                // Recepção Section
-                Container(
-                  key: _sectionKeys['recepcao'],
-                  child: const RecepcaoPage(),
-                ),
-
-                // Presentes Section
-                Container(
-                  key: _sectionKeys['presentes'],
-                  child: const PresentesPage(),
-                ),
-
-                if (!rsvpLimit && rsvpEnable)
-                  // RSVP Section
-                  Container(key: _sectionKeys['rsvp'], child: const RsvpPage()),
-
-                // Recados Section
-                Container(
-                  key: _sectionKeys['recados'],
-                  child: const RecadosPage(),
-                ),
-
-                // Footer
-                _buildFooter(isMobile),
-              ],
-            ),
-          ),
+          SliverToBoxAdapter(child: Column(children: _buildSections(isMobile))),
         ],
       ),
       endDrawer: isMobile
@@ -282,21 +271,25 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeroSection(BuildContext context, bool isMobile) {
     final tamanhoTela = MediaQuery.of(context).size.height;
+    final bool hasBackgroundImage = fundoAleatorio.isNotEmpty;
     return Container(
       height: tamanhoTela * 0.95,
       decoration: BoxDecoration(
-        image: DecorationImage(
-          image: fundoAleatorio.startsWith('http')
-              ? NetworkImage(fundoAleatorio)
-              : AssetImage(fundoAleatorio) as ImageProvider,
-          alignment: AlignmentGeometry.center,
-          scale: 1.0,
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.black.withValues(alpha: 0.4),
-            BlendMode.darken,
-          ),
-        ),
+        color: Colors.black,
+        image: hasBackgroundImage
+            ? DecorationImage(
+                image: fundoAleatorio.startsWith('http')
+                    ? CachedNetworkImageProvider(fundoAleatorio)
+                    : AssetImage(fundoAleatorio) as ImageProvider,
+                alignment: AlignmentGeometry.center,
+                scale: 1.0,
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withValues(alpha: 0.4),
+                  BlendMode.darken,
+                ),
+              )
+            : null,
       ),
       child: Stack(
         children: [
@@ -362,7 +355,7 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${weddingDate.dataNomeMes} • ${weddingDate.hora}',
+                      '${appSettings.weddingDate.dataNomeMes} • ${appSettings.weddingDate.hora}',
                       style: GoogleFonts.lato(
                         fontSize: isMobile ? 18 : 20,
                         fontWeight: FontWeight.w500,
@@ -370,7 +363,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  if (rsvpLimit == false && rsvpEnable) ...[
+                  if (rsvpLimit == false && appSettings.rsvpEnable) ...[
                     const SizedBox(height: 32),
                     ElevatedButton.icon(
                       onPressed: () => _scrollToSection('rsvp'),
@@ -397,7 +390,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCountdownSection(bool isMobile, DateTime now) {
-    if (now.isAfter(weddingDate)) {
+    if (now.isAfter(appSettings.weddingDate)) {
       return Container(
         padding: EdgeInsets.all(isMobile ? 32 : 48),
         color: Colors.white,
@@ -428,7 +421,7 @@ class _HomePageState extends State<HomePage> {
       now.second,
     );
 
-    while (tempDate.add(Duration(days: 30)).isBefore(weddingDate)) {
+    while (tempDate.add(Duration(days: 30)).isBefore(appSettings.weddingDate)) {
       final nextMonth = DateTime(
         tempDate.month == 12 ? tempDate.year + 1 : tempDate.year,
         tempDate.month == 12 ? 1 : tempDate.month + 1,
@@ -438,8 +431,8 @@ class _HomePageState extends State<HomePage> {
         tempDate.second,
       );
 
-      if (nextMonth.isBefore(weddingDate) ||
-          nextMonth.isAtSameMomentAs(weddingDate)) {
+      if (nextMonth.isBefore(appSettings.weddingDate) ||
+          nextMonth.isAtSameMomentAs(appSettings.weddingDate)) {
         months++;
         tempDate = nextMonth;
       } else {
@@ -448,7 +441,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     // Calcula o restante após os meses completos
-    final remainder = weddingDate.difference(tempDate);
+    final remainder = appSettings.weddingDate.difference(tempDate);
 
     final days = remainder.inDays;
     final hours = remainder.inHours % 24;
@@ -540,6 +533,61 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildVersiculo(bool isMobile) {
+    return Container(
+      width: isMobile ? double.infinity : 1200,
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 24 : 48,
+        vertical: 48,
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 46),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '“',
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 24,
+                    color: AppTheme.accentColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                TextSpan(
+                  text:
+                      'As muitas águas não podem apagar o amor, nem os rios podem afogá-lo',
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.accentColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                TextSpan(
+                  text: '”',
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.accentColor,
+                  ),
+                ),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Cantares 8:7',
+            style: GoogleFonts.lato(fontSize: 13, color: AppTheme.textColor),
+            textAlign: TextAlign.justify,
+          ),
+          const SizedBox(height: 46),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMensagemNoivos(bool isMobile) {
     return Container(
       width: isMobile ? double.infinity : 1200,
@@ -549,21 +597,20 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Column(
         children: [
-          Text(
-            'Mensagem dos Noivos',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.primaryColor,
-            ),
+          const SectionTitle(
+            title: 'Mensagem dos Noivos',
+            subtitle: 'Seja bem-vindo(a)!',
           ),
           const SizedBox(height: 16),
-          Text(
-            'Se você recebeu este link, é porque é uma pessoa muito especial para nós. '
-            'É com imensa alegria que desejamos compartilhar um dos momentos mais importantes de nossa história: o nosso casamento. '
-            'A partir do dia 12 de julho de 2026, iniciaremos uma nova etapa, dando início à nossa família. Criamos este site com carinho para facilitar a comunicação com nossos convidados e auxiliar na organização desse dia tão especial.',
-            style: GoogleFonts.lato(fontSize: 16, color: AppTheme.textColor),
-            textAlign: TextAlign.justify,
+          SizedBox(
+          width: isMobile ? double.infinity : 1200,
+            child: Text(
+              'Se você recebeu este link, é porque é uma pessoa muito especial para nós. '
+              'É com imensa alegria que desejamos compartilhar um dos momentos mais importantes de nossa história: o nosso casamento. '
+              'A partir do dia 12 de julho de 2026, iniciaremos uma nova etapa, dando início à nossa família. Criamos este site com carinho para facilitar a comunicação com nossos convidados e auxiliar na organização desse dia tão especial.',
+              style: GoogleFonts.lato(fontSize: 16, color: AppTheme.textColor),
+              textAlign: TextAlign.justify,
+            ),
           ),
           const SizedBox(height: 34),
           Text(
@@ -605,7 +652,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             Text(
-              versaoAtual,
+              appSettings.versaoAtual,
               style: GoogleFonts.lato(
                 fontSize: isMobile ? 12 : 14,
                 color: AppTheme.lightTextColor,

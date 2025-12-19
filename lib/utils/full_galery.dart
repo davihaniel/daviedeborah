@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -43,22 +44,6 @@ class _FullGaleryImagesState extends State<FullGaleryImages> {
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
     );
-    _precacheAdjacentImages(next);
-  }
-
-  /// Pré-carrega imagens adjacentes para navegação suave
-  void _precacheAdjacentImages(int currentIndex) {
-    final nextIndex = (currentIndex + 1) % widget.imagens.length;
-    final previousIndex =
-        currentIndex == 0 ? widget.imagens.length - 1 : currentIndex - 1;
-
-    precacheImage(_providerFromPath(widget.imagens[nextIndex]), context);
-    precacheImage(_providerFromPath(widget.imagens[previousIndex]), context);
-  }
-
-  ImageProvider _providerFromPath(String path) {
-    if (path.startsWith('http')) return NetworkImage(path);
-    return AssetImage(path);
   }
 
   @override
@@ -87,7 +72,6 @@ class _FullGaleryImagesState extends State<FullGaleryImages> {
             scrollDirection: Axis.horizontal,
             onPageChanged: (i) {
               setState(() => _currentIndex = i);
-              _precacheAdjacentImages(i);
             },
           ),
           // Navegação para desktop
@@ -144,7 +128,7 @@ class _FullGaleryImagesState extends State<FullGaleryImages> {
   PhotoViewGalleryPageOptions _buildItem(BuildContext context, int index) {
     final item = widget.imagens[index];
     return PhotoViewGalleryPageOptions(
-      imageProvider: _providerFromPath(item),
+      imageProvider: CachedNetworkImageProvider(item),
       initialScale: PhotoViewComputedScale.contained,
       heroAttributes: PhotoViewHeroAttributes(tag: widget.hero),
       minScale: PhotoViewComputedScale.contained,

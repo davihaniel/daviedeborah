@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,7 +6,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../main.dart';
 import '../stores/admin_store.dart';
 import '../config/app_theme.dart';
-import '../utils/variables.dart';
 
 class AdminLoginPage extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -31,14 +31,8 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
   @override
   void initState() {
-    fundoAleatorio = getRandomBackgroundImage();
+    fundoAleatorio = appSettings.getRandomBackgroundImage();
     super.initState();
-  }
-
-  getRandomBackgroundImage() {
-  final list = galeryImages;
-    list.shuffle();
-    return list.isNotEmpty ? list.first : '';
   }
 
   @override
@@ -58,7 +52,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         decoration: BoxDecoration(
           // Fundo com blur
           image: DecorationImage(
-            image: NetworkImage(fundoAleatorio),
+            image: CachedNetworkImageProvider(fundoAleatorio),
             alignment: AlignmentGeometry.center,
             scale: 1.0,
             fit: BoxFit.cover,
@@ -252,7 +246,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                           SizedBox(height: 10),
 
                           Text(
-                            versaoAtual,
+                            appSettings.versaoAtual,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.lato(
                               fontSize: isMobile ? 12 : 14,

@@ -1,11 +1,11 @@
 import 'package:daviedeborah/utils/extensions.dart';
-import 'package:daviedeborah/utils/variables.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:ui_web' as ui;
 import 'package:web/web.dart' as web;
+import '../main.dart';
 import '../widgets/section_title.dart';
 import '../config/app_theme.dart';
 
@@ -41,7 +41,7 @@ class CerimoniaPage extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Container(
-    width: double.infinity,
+      width: double.infinity,
       color: AppTheme.lightGray,
       child: Column(
         children: [
@@ -77,14 +77,14 @@ class CerimoniaPage extends StatelessWidget {
           _buildInfoRow(
             FontAwesomeIcons.calendar,
             'Data',
-            weddingDate.dataNomeMes,
+            appSettings.weddingDate.dataNomeMes,
             isMobile,
           ),
           const SizedBox(height: 24),
           _buildInfoRow(
             FontAwesomeIcons.clock,
             'Horário',
-            weddingDate.hora,
+            appSettings.weddingDate.hora,
             isMobile,
           ),
           const SizedBox(height: 24),

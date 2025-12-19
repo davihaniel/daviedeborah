@@ -1,5 +1,5 @@
+import 'package:daviedeborah/main.dart';
 import 'package:daviedeborah/utils/extensions.dart';
-import 'package:daviedeborah/utils/variables.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
@@ -167,7 +167,7 @@ class _RsvpPageState extends State<RsvpPage> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Por favor, confirme sua presença até ${rsvpLimitDate.dataNomeMes}',
+                  'Por favor, confirme sua presença até ${appSettings.rsvpLimitDate.dataNomeMes}',
                   style: GoogleFonts.lato(
                     fontSize: isMobile ? 15 : 16,
                     color: AppTheme.lightTextColor,
@@ -337,7 +337,7 @@ class _RsvpPageState extends State<RsvpPage> {
                                 const SizedBox(width: 16),
                                 IconButton(
                                   onPressed: () {
-                                    if (_store.numeroPessoas < countMaxGuests) {
+                                    if (_store.numeroPessoas < appSettings.countMaxGuests) {
                                       _store.setNumeroPessoas(
                                         _store.numeroPessoas + 1,
                                       );

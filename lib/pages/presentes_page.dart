@@ -1,8 +1,8 @@
-import 'package:daviedeborah/utils/variables.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../main.dart';
 import '../widgets/section_title.dart';
 import '../config/app_theme.dart';
 
@@ -101,7 +101,7 @@ class PresentesPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SelectableText(
-                          pixKey,
+                          appSettings.pixKeyValue,
                           style: GoogleFonts.lato(
                             fontSize: isMobile ? 16 : 18,
                             color: AppTheme.primaryColor,
@@ -111,7 +111,7 @@ class PresentesPage extends StatelessWidget {
                         ),
                         IconButton(
                           onPressed: () {
-                            Clipboard.setData(ClipboardData(text: pixKey));
+                            Clipboard.setData(ClipboardData(text: appSettings.pixKeyValue));
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -135,7 +135,7 @@ class PresentesPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Titular: $pixHolderName - $pixBankName',
+                'Titular: ${appSettings.pixNameValue} - ${appSettings.pixBankValue}',
                 style: GoogleFonts.lato(
                   fontSize: isMobile ? 13 : 14,
                   color: AppTheme.lightTextColor,
