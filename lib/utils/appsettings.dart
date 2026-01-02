@@ -33,7 +33,7 @@ class AppSettings {
   final countMaxGuests = 5;
 
   // Habilitar/desabilitar RSVP
-  final rsvpEnable = true;
+  final rsvpEnable = false;
 
   // Lista de imagens do carrossel
   final List<String> galeryImages;
