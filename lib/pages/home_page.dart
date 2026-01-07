@@ -84,7 +84,6 @@ class _HomePageState extends State<HomePage> {
     });*/
   }
 
-
   @override
   void dispose() {
     _store.timer.cancel();
@@ -603,7 +602,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 16),
           SizedBox(
-          width: isMobile ? double.infinity : 1200,
+            width: isMobile ? double.infinity : 1200,
             child: Text(
               'Se você recebeu este link, é porque é uma pessoa muito especial para nós. '
               'É com imensa alegria que desejamos compartilhar um dos momentos mais importantes de nossa história: o nosso casamento. '
@@ -678,7 +677,7 @@ class _NavButton extends StatelessWidget {
       onPressed: onTap,
       child: Text(
         label,
-        style: const TextStyle(
+        style: GoogleFonts.lato(
           fontSize: 16,
           color: AppTheme.secondaryColor,
           fontWeight: FontWeight.w600,
@@ -703,7 +702,10 @@ class _DrawerItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon, size: 20, color: AppTheme.primaryColor),
-      title: Text(label),
+      title: Text(
+        label,
+        style: GoogleFonts.lato(fontSize: 16, color: AppTheme.primaryColor),
+      ),
       onTap: onTap,
     );
   }

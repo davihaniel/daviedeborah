@@ -21,7 +21,12 @@ Future<String> obterVersaoApp() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Ajusta limites do cache de imagens para evitar estouro no mobile
+  
+  // Configuração de cache de imagens para otimizar uso em mobile
+  // Limita o cache para evitar recarregamentos por falta de memória
+  PaintingBinding.instance.imageCache.maximumSize = 50; // máx 50 imagens
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20; // máx 50 MB
+  
   await initializeDateFormatting('pt_BR', null);
   final supabaseService = SupabaseService();
   await supabaseService.initialize();
