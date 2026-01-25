@@ -75,70 +75,115 @@ class PresentesPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Column(
                       children: [
-                        Icon(
-                          FontAwesomeIcons.key,
-                          size: 16,
-                          color: AppTheme.primaryColor,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              FontAwesomeIcons.gift,
+                              size: 16,
+                              color: AppTheme.primaryColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Enxoval:',
+                              style: GoogleFonts.lato(
+                                fontSize: isMobile ? 14 : 16,
+                                color: AppTheme.textColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Chave PIX:',
-                          style: GoogleFonts.lato(
-                            fontSize: isMobile ? 14 : 16,
-                            color: AppTheme.textColor,
-                            fontWeight: FontWeight.w600,
+                        const SizedBox(height: 8),
+                        FilledButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/enxoval');
+                          },
+                          child: Text(
+                            'Acesse aqui a lista de presentes!',
+                            style: GoogleFonts.lato(
+                              fontSize: isMobile ? 16 : 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                    const SizedBox(height: 16),
+                    Column(
                       children: [
-                        SelectableText(
-                          appSettings.pixKeyValue,
-                          style: GoogleFonts.lato(
-                            fontSize: isMobile ? 16 : 18,
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: appSettings.pixKeyValue));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Chave PIX copiada para a área de transferência!',
-                                  style: GoogleFonts.lato(),
-                                ),
-                                duration: const Duration(seconds: 2),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              FontAwesomeIcons.key,
+                              size: 16,
+                              color: AppTheme.primaryColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Chave PIX:',
+                              style: GoogleFonts.lato(
+                                fontSize: isMobile ? 14 : 16,
+                                color: AppTheme.textColor,
+                                fontWeight: FontWeight.w600,
                               ),
-                            );
-                          },
-                          icon: Icon(
-                            Icons.copy_outlined,
-                            size: isMobile ? 16 : 18,
-                            color: AppTheme.primaryColor,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            SelectableText(
+                              appSettings.pixKeyValue,
+                              style: GoogleFonts.lato(
+                                fontSize: isMobile ? 16 : 18,
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                Clipboard.setData(
+                                  ClipboardData(text: appSettings.pixKeyValue),
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Chave PIX copiada para a área de transferência!',
+                                      style: GoogleFonts.lato(),
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              icon: Icon(
+                                Icons.copy_outlined,
+                                size: isMobile ? 16 : 18,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Titular: ${appSettings.pixNameValue} - ${appSettings.pixBankValue}',
+                          style: GoogleFonts.lato(
+                            fontSize: isMobile ? 13 : 14,
+                            color: AppTheme.lightTextColor,
                           ),
                         ),
                       ],
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Titular: ${appSettings.pixNameValue} - ${appSettings.pixBankValue}',
-                style: GoogleFonts.lato(
-                  fontSize: isMobile ? 13 : 14,
-                  color: AppTheme.lightTextColor,
                 ),
               ),
             ],

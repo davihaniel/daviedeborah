@@ -35,6 +35,9 @@ class AppSettings {
   // Habilitar/desabilitar RSVP
   final rsvpEnable = false;
 
+  // URL do enxoval
+  final String enxovalUrl = 'https://docs.google.com/document/d/1xmf4ALmdzedL3hlnf-DuCG6iSSVRoi9JUWsz0dcRVsg/edit?usp=sharing';
+
   // Lista de imagens do carrossel
   final List<String> galeryImages;
 

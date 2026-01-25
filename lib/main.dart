@@ -4,6 +4,7 @@ import 'package:daviedeborah/services/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'config/app_theme.dart';
 import 'utils/appsettings.dart';
 
@@ -45,7 +46,53 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: const HomePage(),
+      onGenerateRoute: (settings) {
+        if (settings.name == '/enxoval') {
+          return MaterialPageRoute(
+            builder: (_) => _ExternalRedirectPage(
+              target: appSettings.enxovalUrl,
+            ),
+          );
+        }
+        return null; // Defer to other route resolvers
+      },
       routes: {'/admin': (context) => const AdminPage()},
+    );
+  }
+}
+
+class _ExternalRedirectPage extends StatefulWidget {
+  const _ExternalRedirectPage({required this.target});
+
+  final String target;
+
+  @override
+  State<_ExternalRedirectPage> createState() => _ExternalRedirectPageState();
+}
+
+class _ExternalRedirectPageState extends State<_ExternalRedirectPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final uri = Uri.parse(widget.target);
+      await launchUrl(
+        uri,
+        mode: LaunchMode.platformDefault,
+        webOnlyWindowName: '_self', // Replace the current tab on web
+      );
+      if (mounted) {
+        Navigator.of(context).maybePop();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
