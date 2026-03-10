@@ -33,7 +33,7 @@ class AppSettings {
   final countMaxGuests = 5;
 
   // Habilitar/desabilitar RSVP
-  final rsvpEnable = false;
+  final rsvpEnable = true;
 
   // URL do enxoval
   final String enxovalUrl = 'https://docs.google.com/document/d/1xmf4ALmdzedL3hlnf-DuCG6iSSVRoi9JUWsz0dcRVsg/edit?usp=sharing';
