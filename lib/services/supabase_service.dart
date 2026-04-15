@@ -158,6 +158,10 @@ class SupabaseService {
           .from('anfitriao')
           .update({'dat_exclusao': DateTime.now().toIso8601String()})
           .eq('id', id);
+      
+      await client.from('convidado')
+          .update({'dat_exclusao': DateTime.now().toIso8601String()})
+          .eq('id_anfitriao', id);
     } catch (e) {
       throw Exception('Erro ao deletar anfitrião: $e');
     }
@@ -204,6 +208,24 @@ class SupabaseService {
       return list;
     } catch (e) {
       throw Exception('Erro ao obter convidados: $e');
+    }
+  }
+
+  /// Obtém todos os convidados com nome do anfitrião (JOIN)
+  Future<List<Convidado>> obterTodosConvidadosComAnfitriao() async {
+    try {
+      final response = await client
+          .from('convidado')
+          .select('*, anfitriao!id_anfitriao(nome)')
+          .isFilter('dat_exclusao', null)
+          .order('nome', ascending: true);
+
+      final list = (response as List)
+          .map((e) => Convidado.fromJson(e))
+          .toList();
+      return list;
+    } catch (e) {
+      throw Exception('Erro ao obter convidados com anfitrião: $e');
     }
   }
 
@@ -402,23 +424,34 @@ class SupabaseService {
     try {
       final anfitrioes = await obterTodosAnfitriaos();
       final convidados = await obterTodosConvidados();
-      final recados = await obterRecadosAprovados();
+      final recadosAprovados = await obterRecadosAprovados();
+      final todosRecados = await obterTodosRecados();
 
       final totalAnfitriaos = anfitrioes.length;
       final totalConfirmados = anfitrioes.where((a) => a.confirmacao).length;
       final totalConvidados = convidados.length;
       final totalCriancas = convidados.where((c) => c.isCrianca).length;
-      final totalRecados = recados.length;
+      final totalAdultos = totalConvidados - totalCriancas;
+      final totalRecados = recadosAprovados.length;
+      final totalRecadosPendentes = todosRecados.where((r) => !r.aprovado).length;
+
+      final agora = DateTime.now();
+      final diasParaCasamento = appSettings.weddingDate.difference(agora).inDays;
+      final rsvpAberto = agora.isBefore(appSettings.rsvpLimitDate);
 
       return {
         'total_anfitrioes': totalAnfitriaos,
         'total_confirmados': totalConfirmados,
         'taxa_confirmacao': totalAnfitriaos > 0
             ? (totalConfirmados / totalAnfitriaos) * 100
-            : 0,
+            : 0.0,
         'total_convidados': totalConvidados,
+        'total_adultos': totalAdultos,
         'total_criancas': totalCriancas,
         'total_recados': totalRecados,
+        'total_recados_pendentes': totalRecadosPendentes,
+        'dias_para_casamento': diasParaCasamento,
+        'rsvp_aberto': rsvpAberto,
       };
     } catch (e) {
       throw Exception('Erro ao obter estatísticas: $e');
