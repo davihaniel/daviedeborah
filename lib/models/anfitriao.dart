@@ -25,13 +25,13 @@ class Anfitriao {
       numero: json['numero'] ?? '',
       confirmacao: json['confirmacao'] ?? false,
       datCriacao: json['dat_criacao'] != null
-          ? DateTime.parse(json['dat_criacao'])
+          ? DateTime.parse(json['dat_criacao']).toLocal()
           : DateTime.now(),
       datAtualizacao: json['dat_atualizacao'] != null
-          ? DateTime.parse(json['dat_atualizacao'])
+          ? DateTime.parse(json['dat_atualizacao']).toLocal()
           : DateTime.now(),
       datExclusao: json['dat_exclusao'] != null
-          ? DateTime.parse(json['dat_exclusao'])
+          ? DateTime.parse(json['dat_exclusao']).toLocal()
           : null,
     );
   }

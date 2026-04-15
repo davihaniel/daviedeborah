@@ -8,6 +8,7 @@ import '../models/convidado.dart';
 import '../models/recado.dart';
 import '../stores/admin_store.dart';
 import '../config/app_theme.dart';
+import '../utils/extensions.dart';
 import 'rsvp_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
@@ -46,7 +47,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   void _carregarDados() {
     _estatisticas = _supabaseService.obterEstatisticas();
     _anfitrioes = _supabaseService.obterTodosAnfitriaos();
-    _convidados = _supabaseService.obterTodosConvidados();
+    _convidados = _supabaseService.obterTodosConvidadosComAnfitriao();
     _recados = _supabaseService.obterTodosRecados();
   }
 
@@ -68,15 +69,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ),
         actions: [
           if (!isMobile)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Center(
-                child: Text(
-                  'Olá, ${widget.adminStore.nomeUsuario}',
-                  style: GoogleFonts.lato(color: Colors.white),
-                ),
-              ),
-            ),
+            _buildAppBarInfo(),
+          IconButton(
+            icon: const Icon(FontAwesomeIcons.arrowsRotate, size: 18),
+            tooltip: 'Atualizar dados',
+            onPressed: () {
+              setState(() {
+                _carregarDados();
+              });
+            },
+          ),
           IconButton(
             icon: const Icon(FontAwesomeIcons.arrowRightFromBracket),
             tooltip: 'Sair',
@@ -91,51 +93,81 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ? Row(
               children: [
                 Container(
-                  margin: EdgeInsets.only(top: 15),
+                  margin: const EdgeInsets.only(top: 15),
                   width: 250,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: NavigationDrawer(
-                          selectedIndex: indexedTab,
-                          onDestinationSelected: (value) {
-                            setState(() {
-                              indexedTab = value;
-                            });
-                          },
+                        child: Column(
                           children: [
-                            NavigationDrawerDestination(
-                              icon: Icon(FontAwesomeIcons.houseUser),
-                              label: Text('Anfitriões'),
+                            // Header do menu
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [AppTheme.primaryColor, AppTheme.accentColor],
+                                      ),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: const Icon(FontAwesomeIcons.heart, color: Colors.white, size: 20),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    'Davi & Deborah',
+                                    style: GoogleFonts.playfairDisplay(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Painel de gerenciamento',
+                                    style: GoogleFonts.lato(
+                                      fontSize: 12,
+                                      color: AppTheme.lightTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            NavigationDrawerDestination(
-                              icon: Icon(FontAwesomeIcons.userGroup),
-                              label: Text('Convidados'),
-                            ),
-                            NavigationDrawerDestination(
-                              icon: Icon(FontAwesomeIcons.envelope),
-                              label: Text('Recados'),
-                            ),
+                            const Divider(height: 1),
+                            const SizedBox(height: 8),
+                            // Itens do menu
+                            ..._buildMenuItems(),
                           ],
                         ),
                       ),
-                      // Estatisticas
-                      _buildEstatisticas(isMobile),
+                      _buildSidebarStats(),
                     ],
                   ),
                 ),
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: IndexedStack(
-                      index: indexedTab,
-                      children: [
-                        _buildListaAnfitriaos(isMobile),
-                        _buildListaConvidados(isMobile),
-                        _buildListaRecados(isMobile),
-                      ],
-                    ),
+                  child: Column(
+                    children: [
+                      _buildEstatisticas(isMobile),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: IndexedStack(
+                            index: indexedTab,
+                            children: [
+                              _buildListaAnfitriaos(isMobile),
+                              _buildListaConvidados(isMobile),
+                              _buildListaRecados(isMobile),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -146,11 +178,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Estatísticas
                     _buildEstatisticas(isMobile),
-                    const SizedBox(height: 40),
-
-                    // Abas
+                    const SizedBox(height: 24),
                     DefaultTabController(
                       length: 3,
                       child: Column(
@@ -198,16 +227,213 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  List<Widget> _buildMenuItems() {
+    final items = [
+      _MenuItemData('Anfitriões', FontAwesomeIcons.houseUser, 0),
+      _MenuItemData('Convidados', FontAwesomeIcons.userGroup, 1),
+      _MenuItemData('Recados', FontAwesomeIcons.envelope, 2),
+    ];
+
+    return items.map((item) {
+      final isSelected = indexedTab == item.index;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => setState(() => indexedTab = item.index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppTheme.primaryColor.withValues(alpha: 0.12)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    item.icon,
+                    size: 18,
+                    color: isSelected ? AppTheme.primaryColor : AppTheme.lightTextColor,
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    item.label,
+                    style: GoogleFonts.lato(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? AppTheme.primaryColor : AppTheme.textColor,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (isSelected)
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildAppBarInfo() {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _estatisticas,
+      builder: (context, snapshot) {
+        final stats = snapshot.data;
+        final dias = stats?['dias_para_casamento'] ?? '...';
+        final rsvpAberto = stats?['rsvp_aberto'] ?? true;
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  const Icon(FontAwesomeIcons.calendar, size: 14, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$dias dias',
+                    style: GoogleFonts.lato(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: rsvpAberto
+                    ? Colors.green.shade400.withValues(alpha: 0.9)
+                    : Colors.red.shade400.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                rsvpAberto ? 'RSVP Aberto' : 'RSVP Encerrado',
+                style: GoogleFonts.lato(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Olá, ${widget.adminStore.nomeUsuario}',
+              style: GoogleFonts.lato(color: Colors.white, fontSize: 13),
+            ),
+            const SizedBox(width: 8),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSidebarStats() {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _estatisticas,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final stats = snapshot.data!;
+        final dias = stats['dias_para_casamento'] ?? 0;
+        final rsvpAberto = stats['rsvp_aberto'] ?? true;
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.primaryColor, AppTheme.accentColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '$dias',
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'dias para o casamento',
+                      style: GoogleFonts.lato(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: rsvpAberto
+                            ? Colors.green.shade400
+                            : Colors.red.shade400,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        rsvpAberto ? 'RSVP Aberto' : 'RSVP Encerrado',
+                        style: GoogleFonts.lato(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildEstatisticas(bool isMobile) {
     return FutureBuilder<Map<String, dynamic>>(
       future: _estatisticas,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          );
         }
 
         if (snapshot.hasError) {
           return Container(
+            margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.red.shade50,
@@ -218,167 +444,225 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         }
 
         final stats = snapshot.data ?? {};
+        final totalAnfitrioes = stats['total_anfitrioes'] ?? 0;
+        final totalConfirmados = stats['total_confirmados'] ?? 0;
+        final taxaConfirmacao = (stats['taxa_confirmacao'] ?? 0.0) as double;
+        final totalConvidados = stats['total_convidados'] ?? 0;
+        final totalAdultos = stats['total_adultos'] ?? 0;
+        final totalCriancas = stats['total_criancas'] ?? 0;
+        final totalRecados = stats['total_recados'] ?? 0;
+        final totalPendentes = stats['total_recados_pendentes'] ?? 0;
+        final diasCasamento = stats['dias_para_casamento'] ?? 0;
+        final rsvpAberto = stats['rsvp_aberto'] ?? true;
 
-        return !isMobile
-            ? Padding(
-                padding: const EdgeInsets.all(16),
+        final cards = [
+          _StatData(
+            'Confirmações',
+            '$totalConfirmados/$totalAnfitrioes',
+            '${taxaConfirmacao.toStringAsFixed(1)}%',
+            FontAwesomeIcons.circleCheck,
+            Colors.green,
+            progress: totalAnfitrioes > 0
+                ? totalConfirmados / totalAnfitrioes
+                : 0.0,
+          ),
+          _StatData(
+            'Convidados',
+            '$totalConvidados',
+            'total geral',
+            FontAwesomeIcons.users,
+            AppTheme.primaryColor,
+          ),
+          _StatData(
+            'Adultos',
+            '$totalAdultos',
+            'pessoas',
+            FontAwesomeIcons.userTie,
+            AppTheme.accentColor,
+          ),
+          _StatData(
+            'Crianças',
+            '$totalCriancas',
+            'até 6 anos',
+            FontAwesomeIcons.child,
+            Colors.orange,
+          ),
+          _StatData(
+            'Recados',
+            '$totalRecados',
+            'aprovados',
+            FontAwesomeIcons.comments,
+            Colors.blue,
+          ),
+          _StatData(
+            'Pendentes',
+            '$totalPendentes',
+            'aguardando',
+            FontAwesomeIcons.clockRotateLeft,
+            Colors.amber.shade700,
+          ),
+        ];
+
+        if (isMobile) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Contagem regressiva mobile
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.primaryColor, AppTheme.accentColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 16,
                   children: [
-                    _buildStatCardHorizontal(
-                      'Confirmações',
-                      '${stats['total_confirmados'] ?? 0}/${stats['total_anfitrioes'] ?? 0}',
-                      '- ${(stats['taxa_confirmacao'] ?? 0).toStringAsFixed(2)}%',
-                      FontAwesomeIcons.circleCheck,
+                    Text(
+                      '$diasCasamento dias',
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-
-                    _buildStatCardHorizontal(
-                      'Convidados',
-                      '${stats['total_convidados'] ?? 0}',
-                      '',
-                      FontAwesomeIcons.users,
+                    const SizedBox(height: 4),
+                    Text(
+                      'para o casamento',
+                      style: GoogleFonts.lato(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
                     ),
-                    _buildStatCardHorizontal(
-                      'Crianças',
-                      '${stats['total_criancas'] ?? 0}',
-                      '',
-                      FontAwesomeIcons.child,
-                    ),
-                    _buildStatCardHorizontal(
-                      'Recados',
-                      '${stats['total_recados'] ?? 0}',
-                      '',
-                      FontAwesomeIcons.comments,
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: rsvpAberto ? Colors.green.shade400 : Colors.red.shade400,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        rsvpAberto ? 'RSVP Aberto' : 'RSVP Encerrado',
+                        style: GoogleFonts.lato(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Estatísticas do Casamento',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: 16),
+              // Cards móveis em scroll horizontal
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: cards.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) => SizedBox(
+                    width: 140,
+                    child: _buildModernStatCard(cards[index]),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+
+        // Desktop: cards em row no topo da área de conteúdo
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: cards
+                .map(
+                  (c) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: _buildModernStatCard(c),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      int crossAxisCount = 2;
-                      if (constraints.maxWidth > 1200) {
-                        crossAxisCount = 8;
-                      } else if (constraints.maxWidth > 800) {
-                        crossAxisCount = 5;
-                      } else if (constraints.maxWidth > 600) {
-                        crossAxisCount = 4;
-                      }
-
-                      return GridView.count(
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          _buildStatCard(
-                            'Confirmações',
-                            '${stats['total_confirmados'] ?? 0}/${stats['total_anfitrioes'] ?? 0}',
-                            '${(stats['taxa_confirmacao'] ?? 0).toStringAsFixed(2)}%',
-                            FontAwesomeIcons.circleCheck,
-                          ),
-                          _buildStatCard(
-                            'Convidados',
-                            '${stats['total_convidados'] ?? 0}',
-                            '',
-                            FontAwesomeIcons.users,
-                          ),
-                          _buildStatCard(
-                            'Crianças',
-                            '${stats['total_criancas'] ?? 0}',
-                            '',
-                            FontAwesomeIcons.child,
-                          ),
-                          _buildStatCard(
-                            'Recados',
-                            '${stats['total_recados'] ?? 0}',
-                            '',
-                            FontAwesomeIcons.comments,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              );
+                )
+                .toList(),
+          ),
+        );
       },
     );
   }
 
-  Widget _buildStatCardHorizontal(
-    String titulo,
-    String valor,
-    String subtitulo,
-    IconData icon,
-  ) {
-    return Row(
-      children: [
-        Icon(icon, size: 26, color: AppTheme.primaryColor),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [Text(titulo), Text('$valor $subtitulo')],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    String titulo,
-    String valor,
-    String subtitulo,
-    IconData icon,
-  ) {
+  Widget _buildModernStatCard(_StatData data) {
     return Card(
-      elevation: 2,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 5,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 26, color: AppTheme.primaryColor),
-            Text(
-              titulo,
-              style: GoogleFonts.lato(
-                fontSize: 13,
-                color: AppTheme.lightTextColor,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: data.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(data.icon, size: 16, color: data.color),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    data.titulo,
+                    style: GoogleFonts.lato(
+                      fontSize: 12,
+                      color: AppTheme.lightTextColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 12),
             Text(
-              valor,
+              data.valor,
               style: GoogleFonts.playfairDisplay(
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.primaryColor,
+                color: AppTheme.textColor,
               ),
-              textAlign: TextAlign.center,
             ),
-            if (subtitulo.isNotEmpty) ...[
-              Text(
-                subtitulo,
-                style: GoogleFonts.lato(
-                  fontSize: 12,
-                  color: AppTheme.lightTextColor,
-                  fontWeight: FontWeight.w400,
+            if (data.progress != null) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: data.progress!,
+                  backgroundColor: Colors.grey.shade200,
+                  color: data.color,
+                  minHeight: 6,
                 ),
               ),
+              const SizedBox(height: 4),
             ],
+            if (data.subtitulo.isNotEmpty)
+              Text(
+                data.subtitulo,
+                style: GoogleFonts.lato(
+                  fontSize: 11,
+                  color: AppTheme.lightTextColor,
+                ),
+              ),
           ],
         ),
       ),
@@ -489,9 +773,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       itemBuilder: (context, index) {
                         final anfitriao = filtrados[index];
                         return Card(
-                          elevation: 1,
-                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey.shade200),
+                          ),
                           child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             onTap: () {
                               _listaConvidadosAnfitriao(
                                 context,
@@ -499,28 +788,63 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 isMobile,
                               );
                             },
-                            leading: Icon(
-                              FontAwesomeIcons.user,
-                              color: AppTheme.primaryColor,
+                            leading: CircleAvatar(
+                              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
+                              child: Icon(
+                                FontAwesomeIcons.user,
+                                color: AppTheme.primaryColor,
+                                size: 18,
+                              ),
                             ),
-                            title: Text(anfitriao.nome),
-                            subtitle: Text(anfitriao.numero),
+                            title: Text(
+                              anfitriao.nome,
+                              style: GoogleFonts.lato(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text(anfitriao.numero),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: anfitriao.confirmacao
+                                            ? Colors.green.shade50
+                                            : Colors.red.shade50,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        anfitriao.confirmacao ? 'Confirmado' : 'Não confirmado',
+                                        style: GoogleFonts.lato(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: anfitriao.confirmacao
+                                              ? Colors.green.shade700
+                                              : Colors.red.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(FontAwesomeIcons.clock, size: 10, color: AppTheme.lightTextColor),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      anfitriao.datCriacao.dataHoraAbrev,
+                                      style: GoogleFonts.lato(
+                                        fontSize: 10,
+                                        color: AppTheme.lightTextColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                             trailing: Wrap(
                               alignment: WrapAlignment.center,
                               runAlignment: WrapAlignment.center,
                               children: [
-                                IconButton(
-                                  onPressed: null,
-                                  icon: Icon(
-                                    anfitriao.confirmacao
-                                        ? FontAwesomeIcons.check
-                                        : FontAwesomeIcons.xmark,
-                                    size: 20,
-                                    color: anfitriao.confirmacao
-                                        ? Colors.green
-                                        : Colors.red,
-                                  ),
-                                ),
                                 IconButton(
                                   icon: const Icon(
                                     FontAwesomeIcons.whatsapp,
@@ -533,12 +857,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 IconButton(
                                   icon: const Icon(
                                     FontAwesomeIcons.pen,
-                                    size: 20,
+                                    size: 18,
                                   ),
                                   onPressed: () => _editarAnfitriao(
                                     context,
                                     anfitriao,
                                     isMobile,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    FontAwesomeIcons.trash,
+                                    size: 18,
+                                    color: Colors.red.shade400,
+                                  ),
+                                  tooltip: 'Excluir anfitrião',
+                                  onPressed: () => _deletarAnfitriao(
+                                    context,
+                                    anfitriao,
                                   ),
                                 ),
                               ],
@@ -657,49 +993,97 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       itemCount: filtrados.length,
                       itemBuilder: (context, index) {
                         final convidado = filtrados[index];
-                        return FutureBuilder<Anfitriao?>(
-                          future: _supabaseService.obterAnfitriaoPorId(
-                            convidado.idAnfitriao,
+                        return Card(
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey.shade200),
                           ),
-                          builder: (context, snapshotAnf) {
-                            final anfitriao = snapshotAnf.data;
-                            return Card(
-                          elevation: 1,
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: ListTile(
-                                leading: Icon(
-                                  convidado.isCrianca
-                                      ? FontAwesomeIcons.child
-                                      : FontAwesomeIcons.user,
-                                  color: AppTheme.primaryColor,
-                                ),
-                                title: Text(convidado.nome),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(anfitriao?.nome ?? 'Carregando...'),
-                                    if (convidado.isCrianca)
-                                      Text(
-                                        'Criança - ${convidado.idade} anos',
-                                        style: GoogleFonts.lato(
-                                          fontSize: 12,
-                                          color: Colors.orange,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(FontAwesomeIcons.pen, size: 20,),
-                                  onPressed: () => _editarConvidado(
-                                    context,
-                                    convidado,
-                                    isMobile,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            leading: CircleAvatar(
+                              backgroundColor: convidado.isCrianca
+                                  ? Colors.orange.withValues(alpha: 0.15)
+                                  : AppTheme.primaryColor.withValues(alpha: 0.15),
+                              child: Icon(
+                                convidado.isCrianca
+                                    ? FontAwesomeIcons.child
+                                    : FontAwesomeIcons.user,
+                                color: convidado.isCrianca
+                                    ? Colors.orange
+                                    : AppTheme.primaryColor,
+                                size: 18,
+                              ),
+                            ),
+                            title: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    convidado.nome,
+                                    style: GoogleFonts.lato(fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                if (convidado.isCrianca) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade50,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '${convidado.idade} anos',
+                                      style: GoogleFonts.lato(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.orange.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(FontAwesomeIcons.houseUser, size: 10, color: AppTheme.lightTextColor),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      convidado.nomeAnfitriao ?? 'Sem anfitrião',
+                                      style: GoogleFonts.lato(fontSize: 12, color: AppTheme.textColor),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(FontAwesomeIcons.clock, size: 10, color: AppTheme.lightTextColor),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      convidado.datCriacao.dataHoraAbrev,
+                                      style: GoogleFonts.lato(
+                                        fontSize: 10,
+                                        color: AppTheme.lightTextColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(FontAwesomeIcons.pen, size: 18),
+                              onPressed: () => _editarConvidado(
+                                context,
+                                convidado,
+                                isMobile,
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -789,32 +1173,65 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       itemBuilder: (context, index) {
                         final recado = filtrados[index];
                         return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 1,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey.shade200),
+                          ),
                           child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             leading: Container(
-                              width: 50,
-                              height: 50,
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
                                 color: recado.aprovado
                                     ? Colors.green.shade50
                                     : Colors.orange.shade50,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 recado.aprovado
                                     ? FontAwesomeIcons.circleCheck
-                                    : FontAwesomeIcons.circle,
+                                    : FontAwesomeIcons.clock,
                                 color: recado.aprovado
                                     ? Colors.green
                                     : Colors.orange,
+                                size: 20,
                               ),
                             ),
-                            title: Text(
-                              recado.nome,
-                              style: GoogleFonts.lato(
-                                fontWeight: FontWeight.w600,
-                              ),
+                            title: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    recado.nome,
+                                    style: GoogleFonts.lato(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: recado.aprovado
+                                        ? Colors.green.shade50
+                                        : Colors.orange.shade50,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    recado.aprovado ? 'Aprovado' : 'Pendente',
+                                    style: GoogleFonts.lato(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: recado.aprovado
+                                          ? Colors.green.shade700
+                                          : Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -825,6 +1242,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.lato(fontSize: 13),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Icon(FontAwesomeIcons.clock, size: 10, color: AppTheme.lightTextColor),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      recado.datCriacao.dataHoraAbrev,
+                                      style: GoogleFonts.lato(
+                                        fontSize: 10,
+                                        color: AppTheme.lightTextColor,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -904,6 +1335,95 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
+  void _deletarAnfitriao(BuildContext context, Anfitriao anfitriao) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(FontAwesomeIcons.triangleExclamation, color: Colors.red.shade600, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Excluir Anfitrião'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichText(
+              text: TextSpan(
+                style: GoogleFonts.lato(fontSize: 14, color: AppTheme.textColor),
+                children: [
+                  const TextSpan(text: 'Deseja realmente excluir '),
+                  TextSpan(
+                    text: anfitriao.nome,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const TextSpan(text: '?'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(FontAwesomeIcons.circleInfo, size: 16, color: Colors.amber.shade700),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Todos os convidados vinculados a este anfitrião também serão removidos.',
+                      style: GoogleFonts.lato(fontSize: 12, color: Colors.amber.shade900),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              await _supabaseService.deletarAnfitriao(anfitriao.id);
+              if (mounted) {
+                setState(() {
+                  _carregarDados();
+                });
+                if (!context.mounted) return;
+                Navigator.pop(dialogCtx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Anfitrião excluído com sucesso')),
+                );
+              }
+            },
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _listaConvidadosAnfitriao(
     BuildContext context,
     Anfitriao anfitriao,
@@ -981,102 +1501,190 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setStateSB) {
-          return AlertDialog(
-            title: const Text('Editar anfitrião'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nomeCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome',
-                      prefixIcon: Icon(FontAwesomeIcons.user),
-                    ),
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 480),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(FontAwesomeIcons.userPen, color: AppTheme.primaryColor, size: 20),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Editar Anfitrião',
+                                  style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
+                                ),
+                                Text(
+                                  'Criado em ${anfitriao.datCriacao.dataNomeMesAbrev}',
+                                  style: GoogleFonts.lato(fontSize: 12, color: AppTheme.lightTextColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            icon: const Icon(Icons.close, size: 20),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.grey.shade100,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      // Dados pessoais
+                      Text(
+                        'Dados pessoais',
+                        style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.lightTextColor),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: nomeCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'Nome completo',
+                          prefixIcon: const Icon(FontAwesomeIcons.user, size: 18),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTheme.primaryColor, width: 2)),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: numeroCtrl,
+                        inputFormatters: [PhoneMaskFormatter()],
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Telefone',
+                          hintText: '(99) 99999-9999',
+                          prefixIcon: const Icon(FontAwesomeIcons.phone, size: 18),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTheme.primaryColor, width: 2)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Status
+                      Text(
+                        'Status',
+                        style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.lightTextColor),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: confirmado ? Colors.green.shade50 : Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: confirmado ? Colors.green.shade200 : Colors.red.shade200),
+                        ),
+                        child: SwitchListTile(
+                          title: Text(
+                            confirmado ? 'Presença confirmada' : 'Presença não confirmada',
+                            style: GoogleFonts.lato(
+                              fontWeight: FontWeight.w600,
+                              color: confirmado ? Colors.green.shade700 : Colors.red.shade700,
+                            ),
+                          ),
+                          subtitle: Text(
+                            confirmado ? 'O anfitrião confirmou presença no casamento' : 'Aguardando confirmação',
+                            style: GoogleFonts.lato(fontSize: 12, color: AppTheme.lightTextColor),
+                          ),
+                          value: confirmado,
+                          activeColor: Colors.green,
+                          onChanged: (value) => setStateSB(() => confirmado = value),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Ações
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => _deletarAnfitriao(context, anfitriao),
+                            icon: Icon(FontAwesomeIcons.trash, size: 14, color: Colors.red.shade400),
+                            label: Text('Excluir', style: TextStyle(color: Colors.red.shade400)),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            child: const Text('Cancelar'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: salvando
+                                ? null
+                                : () async {
+                                    final nome = nomeCtrl.text.trim();
+                                    final numero = numeroCtrl.text.trim();
+                                    if (nome.isEmpty || numero.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Preencha nome e telefone do anfitrião')),
+                                      );
+                                      return;
+                                    }
+                                    final digits = numero.replaceAll(RegExp(r'\D'), '');
+                                    if (digits.length != 11) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Por favor, digite um telefone válido com 11 dígitos')),
+                                      );
+                                      return;
+                                    }
+                                    setStateSB(() => salvando = true);
+                                    await _supabaseService.atualizarAnfitriao(
+                                      id: anfitriao.id,
+                                      nome: nome,
+                                      numero: numero,
+                                      confirmacao: confirmado,
+                                    );
+                                    if (mounted) {
+                                      setState(() {
+                                        _carregarDados();
+                                      });
+                                      if (!context.mounted) return;
+                                      Navigator.pop(dialogCtx);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Anfitrião atualizado com sucesso')),
+                                      );
+                                    }
+                                    setStateSB(() => salvando = false);
+                                  },
+                            child: salvando
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Text('Salvar'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: numeroCtrl,
-                    inputFormatters: [PhoneMaskFormatter()],
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefone',
-                      hintText: '(99) 99999-9999',
-                      prefixIcon: Icon(FontAwesomeIcons.phone),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    title: const Text('Confirmado'),
-                    value: confirmado,
-                    onChanged: (value) => setStateSB(() => confirmado = value),
-                  ),
-                ],
+                ),
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: salvando
-                    ? null
-                    : () async {
-                        final nome = nomeCtrl.text.trim();
-                        final numero = numeroCtrl.text.trim();
-                        if (nome.isEmpty || numero.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Preencha nome e telefone do anfitrião',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-
-                        final digits = numero.replaceAll(RegExp(r'\D'), '');
-                        if (digits.length != 11) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Por favor, digite um telefone válido com 11 dígitos',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        setStateSB(() => salvando = true);
-                        await _supabaseService.atualizarAnfitriao(
-                          id: anfitriao.id,
-                          nome: nome,
-                          numero: numero,
-                          confirmacao: confirmado,
-                        );
-                        if (mounted) {
-                          setState(() {
-                            _carregarDados();
-                          });
-                          if (!context.mounted) return;
-                          Navigator.pop(dialogCtx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Anfitrião atualizado com sucesso'),
-                            ),
-                          );
-                        }
-                        setStateSB(() => salvando = false);
-                      },
-                child: salvando
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Salvar'),
-              ),
-            ],
           );
         },
       ),
@@ -1096,154 +1704,223 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final anfitrioesFuture = _supabaseService.obterTodosAnfitriaos();
     String? anfitriaoSelecionado = convidado.idAnfitriao;
 
+    InputDecoration styledInput(String label, IconData icon) {
+      return InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 18),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTheme.primaryColor, width: 2)),
+      );
+    }
+
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setStateSB) {
-          return AlertDialog(
-            title: const Text('Editar convidado'),
-            content: FutureBuilder<List<Anfitriao>>(
-              future: anfitrioesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                    height: 80,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Text('Erro ao carregar anfitriões: ${snapshot.error}');
-                }
-                final anfitrioes = snapshot.data ?? [];
-                if (anfitrioes.isEmpty) {
-                  return const Text('Nenhum anfitrião disponível.');
-                }
-
-                return SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: nomeCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Nome do convidado',
-                          prefixIcon: Icon(FontAwesomeIcons.user),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: idadeCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Idade (opcional)',
-                          prefixIcon: Icon(FontAwesomeIcons.cakeCandles),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        initialValue: anfitriaoSelecionado,
-                        items: anfitrioes
-                            .map(
-                              (a) => DropdownMenuItem(
-                                value: a.id,
-                                child: Text(a.nome),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) =>
-                            setStateSB(() => anfitriaoSelecionado = value),
-                        decoration: const InputDecoration(
-                          labelText: 'Anfitrião',
-                          prefixIcon: Icon(FontAwesomeIcons.houseUser),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  await _supabaseService.deletarConvidado(convidado.id);
-                  if (mounted) {
-                    setState(() {
-                      _convidados = _supabaseService.obterTodosConvidados();
-                      _estatisticas = _supabaseService.obterEstatisticas();
-                    });
-                    if (!context.mounted) return;
-                    Navigator.pop(dialogCtx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Convidado deletado')),
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 480),
+              child: FutureBuilder<List<Anfitriao>>(
+                future: anfitrioesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(child: CircularProgressIndicator()),
                     );
                   }
+                  if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text('Erro ao carregar anfitriões: ${snapshot.error}'),
+                    );
+                  }
+                  final anfitrioes = snapshot.data ?? [];
+
+                  return SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: convidado.isCrianca
+                                      ? Colors.orange.withValues(alpha: 0.12)
+                                      : AppTheme.primaryColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  convidado.isCrianca ? FontAwesomeIcons.child : FontAwesomeIcons.userPen,
+                                  color: convidado.isCrianca ? Colors.orange : AppTheme.primaryColor,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Editar Convidado',
+                                      style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
+                                    ),
+                                    Text(
+                                      'Criado em ${convidado.datCriacao.dataNomeMesAbrev}',
+                                      style: GoogleFonts.lato(fontSize: 12, color: AppTheme.lightTextColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.pop(dialogCtx),
+                                icon: const Icon(Icons.close, size: 20),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.grey.shade100,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          // Dados
+                          Text(
+                            'Informações',
+                            style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.lightTextColor),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: nomeCtrl,
+                            decoration: styledInput('Nome do convidado', FontAwesomeIcons.user),
+                          ),
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: idadeCtrl,
+                            decoration: styledInput('Idade (opcional)', FontAwesomeIcons.cakeCandles),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 14),
+                          if (anfitrioes.isNotEmpty)
+                            DropdownButtonFormField<String>(
+                              value: anfitriaoSelecionado,
+                              items: anfitrioes
+                                  .map((a) => DropdownMenuItem(value: a.id, child: Text(a.nome)))
+                                  .toList(),
+                              onChanged: (value) => setStateSB(() => anfitriaoSelecionado = value),
+                              decoration: styledInput('Anfitrião', FontAwesomeIcons.houseUser),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.amber.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(FontAwesomeIcons.circleInfo, size: 16, color: Colors.amber.shade700),
+                                  const SizedBox(width: 10),
+                                  const Expanded(child: Text('Nenhum anfitrião disponível.')),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 24),
+                          // Ações
+                          Row(
+                            children: [
+                              TextButton.icon(
+                                onPressed: () async {
+                                  await _supabaseService.deletarConvidado(convidado.id);
+                                  if (mounted) {
+                                    setState(() {
+                                      _convidados = _supabaseService.obterTodosConvidadosComAnfitriao();
+                                      _estatisticas = _supabaseService.obterEstatisticas();
+                                    });
+                                    if (!context.mounted) return;
+                                    Navigator.pop(dialogCtx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Convidado deletado')),
+                                    );
+                                  }
+                                },
+                                icon: Icon(FontAwesomeIcons.trash, size: 14, color: Colors.red.shade400),
+                                label: Text('Excluir', style: TextStyle(color: Colors.red.shade400)),
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () => Navigator.pop(dialogCtx),
+                                child: const Text('Cancelar'),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: salvando
+                                    ? null
+                                    : () async {
+                                        final nome = nomeCtrl.text.trim();
+                                        if (nome.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Digite o nome do convidado')),
+                                          );
+                                          return;
+                                        }
+                                        if (anfitriaoSelecionado == null) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Selecione um anfitrião')),
+                                          );
+                                          return;
+                                        }
+                                        final idade = idadeCtrl.text.trim().isEmpty
+                                            ? null
+                                            : int.tryParse(idadeCtrl.text.trim());
+                                        setStateSB(() => salvando = true);
+                                        await _supabaseService.atualizarConvidado(
+                                          id: convidado.id,
+                                          nome: nome,
+                                          idade: idade,
+                                          idAnfitriao: anfitriaoSelecionado,
+                                        );
+                                        if (mounted) {
+                                          setState(() {
+                                            _convidados = _supabaseService.obterTodosConvidadosComAnfitriao();
+                                            _estatisticas = _supabaseService.obterEstatisticas();
+                                          });
+                                          if (!context.mounted) return;
+                                          Navigator.pop(dialogCtx);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Convidado atualizado')),
+                                          );
+                                        }
+                                        setStateSB(() => salvando = false);
+                                      },
+                                child: salvando
+                                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                    : const Text('Salvar'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 },
-                child: const Text(
-                  'Deletar',
-                  style: TextStyle(color: Colors.red),
-                ),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: salvando
-                    ? null
-                    : () async {
-                        final nome = nomeCtrl.text.trim();
-                        if (nome.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Digite o nome do convidado'),
-                            ),
-                          );
-                          return;
-                        }
-                        if (anfitriaoSelecionado == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Selecione um anfitrião'),
-                            ),
-                          );
-                          return;
-                        }
-                        final idade = idadeCtrl.text.trim().isEmpty
-                            ? null
-                            : int.tryParse(idadeCtrl.text.trim());
-                        setStateSB(() => salvando = true);
-                        await _supabaseService.atualizarConvidado(
-                          id: convidado.id,
-                          nome: nome,
-                          idade: idade,
-                          idAnfitriao: anfitriaoSelecionado,
-                        );
-                        if (mounted) {
-                          setState(() {
-                            _convidados = _supabaseService
-                                .obterTodosConvidados();
-                            _estatisticas = _supabaseService
-                                .obterEstatisticas();
-                          });
-                          if (!context.mounted) return;
-                          Navigator.pop(dialogCtx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Convidado atualizado'),
-                            ),
-                          );
-                        }
-                        setStateSB(() => salvando = false);
-                      },
-                child: salvando
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Salvar'),
-              ),
-            ],
+            ),
           );
         },
       ),
@@ -1417,221 +2094,298 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
 
     void removeGuest(int index) {
-      if (index == 0) return; // anfitrião não sai
+      if (index == 0) return;
       guestNameCtrls.removeAt(index);
       guestAgeCtrls.removeAt(index);
       guestIsChild.removeAt(index);
+    }
+
+    InputDecoration _styledInput(String label, IconData icon, {String? hint}) {
+      return InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, size: 18),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTheme.primaryColor, width: 2)),
+      );
     }
 
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setStateSB) {
-          return AlertDialog(
-            title: const Text('Novo anfitrião + convidados'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nomeCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome do anfitrião',
-                      prefixIcon: Icon(FontAwesomeIcons.user),
-                    ),
-                    onChanged: syncHostName,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: numeroCtrl,
-                    inputFormatters: [PhoneMaskFormatter()],
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefone',
-                      hintText: '(99) 99999-9999',
-                      prefixIcon: Icon(FontAwesomeIcons.phone),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Convidados (inclui anfitrião)',
-                      style: GoogleFonts.lato(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...List.generate(guestNameCtrls.length, (index) {
-                    final nameCtrl = guestNameCtrls[index];
-                    final ageCtrl = guestAgeCtrls[index];
-                    final isChild = guestIsChild[index];
-                    final isHost = index == 0;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 520),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [AppTheme.primaryColor, AppTheme.accentColor]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(FontAwesomeIcons.userPlus, color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: nameCtrl,
-                                    readOnly: isHost,
-                                    decoration: InputDecoration(
-                                      labelText: isHost
-                                          ? 'Nome do anfitrião (fixo)'
-                                          : 'Nome do convidado',
-                                    ),
-                                  ),
+                                Text(
+                                  'Novo Anfitrião',
+                                  style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
                                 ),
-                                if (!isHost)
-                                  IconButton(
-                                    icon: const Icon(FontAwesomeIcons.trash, size: 20,),
-                                    onPressed: () {
-                                      setStateSB(() => removeGuest(index));
-                                    },
-                                  ),
+                                Text(
+                                  'Adicione o anfitrião e seus convidados',
+                                  style: GoogleFonts.lato(fontSize: 12, color: AppTheme.lightTextColor),
+                                ),
                               ],
                             ),
-                            if (!isHost) ...[
-                              CheckboxListTile(
-                                title: const Text('É criança (até 6 anos)', style: TextStyle(fontSize: 14)),
-                                value: isChild,
-                                onChanged: (v) => setStateSB(() {
-                                  guestIsChild[index] = v ?? false;
-                                  if (!(v ?? false)) {
-                                    ageCtrl.clear();
-                                  }
-                                }),
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              if (isChild)
-                                TextField(
-                                  controller: ageCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Idade',
-                                    prefixIcon: Icon(
-                                      FontAwesomeIcons.cakeCandles,
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                            ],
-                          ],
-                        ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            icon: const Icon(Icons.close, size: 20),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.grey.shade100,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  }),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        setStateSB(addGuest);
-                      },
-                      icon: const Icon(FontAwesomeIcons.plus),
-                      label: const Text('Adicionar convidado'),
-                    ),
+                      const SizedBox(height: 24),
+                      // Dados do anfitrião
+                      Text(
+                        'Dados do anfitrião',
+                        style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.lightTextColor),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: nomeCtrl,
+                        decoration: _styledInput('Nome do anfitrião', FontAwesomeIcons.user),
+                        onChanged: syncHostName,
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: numeroCtrl,
+                        inputFormatters: [PhoneMaskFormatter()],
+                        keyboardType: TextInputType.phone,
+                        decoration: _styledInput('Telefone', FontAwesomeIcons.phone, hint: '(99) 99999-9999'),
+                      ),
+                      const SizedBox(height: 24),
+                      // Lista de convidados
+                      Row(
+                        children: [
+                          Text(
+                            'Convidados',
+                            style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.lightTextColor),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${guestNameCtrls.length}',
+                              style: GoogleFonts.lato(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primaryColor),
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () => setStateSB(addGuest),
+                            icon: const Icon(FontAwesomeIcons.plus, size: 14),
+                            label: const Text('Adicionar'),
+                            style: TextButton.styleFrom(foregroundColor: AppTheme.primaryColor),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ...List.generate(guestNameCtrls.length, (index) {
+                        final nameCtrl = guestNameCtrls[index];
+                        final ageCtrl = guestAgeCtrls[index];
+                        final isChild = guestIsChild[index];
+                        final isHost = index == 0;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isHost ? AppTheme.primaryColor.withValues(alpha: 0.04) : Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: isHost ? AppTheme.primaryColor.withValues(alpha: 0.2) : Colors.grey.shade200),
+                            ),
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 28,
+                                      height: 28,
+                                      decoration: BoxDecoration(
+                                        color: isHost ? AppTheme.primaryColor.withValues(alpha: 0.15) : Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: GoogleFonts.lato(fontSize: 12, fontWeight: FontWeight.w700, color: isHost ? AppTheme.primaryColor : AppTheme.lightTextColor),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    if (isHost)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text('Anfitrião', style: GoogleFonts.lato(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.primaryColor)),
+                                      ),
+                                    const Spacer(),
+                                    if (!isHost)
+                                      IconButton(
+                                        icon: Icon(FontAwesomeIcons.xmark, size: 16, color: Colors.red.shade400),
+                                        onPressed: () => setStateSB(() => removeGuest(index)),
+                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                TextField(
+                                  controller: nameCtrl,
+                                  readOnly: isHost,
+                                  decoration: _styledInput(
+                                    isHost ? 'Nome do anfitrião (automático)' : 'Nome do convidado',
+                                    FontAwesomeIcons.user,
+                                  ),
+                                ),
+                                if (!isHost) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value: isChild,
+                                        onChanged: (v) => setStateSB(() {
+                                          guestIsChild[index] = v ?? false;
+                                          if (!(v ?? false)) ageCtrl.clear();
+                                        }),
+                                        activeColor: AppTheme.primaryColor,
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      Text('É criança (até 6 anos)', style: GoogleFonts.lato(fontSize: 13)),
+                                    ],
+                                  ),
+                                  if (isChild) ...[
+                                    const SizedBox(height: 8),
+                                    TextField(
+                                      controller: ageCtrl,
+                                      decoration: _styledInput('Idade', FontAwesomeIcons.cakeCandles),
+                                      keyboardType: TextInputType.number,
+                                    ),
+                                  ],
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 16),
+                      // Ações
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            child: const Text('Cancelar'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: salvando
+                                ? null
+                                : () async {
+                                    final nome = nomeCtrl.text.trim();
+                                    final numero = numeroCtrl.text.trim();
+                                    if (nome.isEmpty || numero.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Preencha nome e telefone do anfitrião')),
+                                      );
+                                      return;
+                                    }
+                                    final digits = numero.replaceAll(RegExp(r'\D'), '');
+                                    if (digits.length != 11) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Por favor, digite um telefone válido com 11 dígitos')),
+                                      );
+                                      return;
+                                    }
+
+                                    final convidados = <Map<String, dynamic>>[];
+                                    for (var i = 0; i < guestNameCtrls.length; i++) {
+                                      final nomeConvidado = guestNameCtrls[i].text.trim();
+                                      if (nomeConvidado.isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Preencha o nome do convidado ${i + 1}')),
+                                        );
+                                        return;
+                                      }
+                                      final idadeTexto = guestAgeCtrls[i].text.trim();
+                                      final idade = idadeTexto.isEmpty ? null : int.tryParse(idadeTexto);
+                                      convidados.add({'nome': nomeConvidado, 'idade': idade});
+                                    }
+
+                                    setStateSB(() => salvando = true);
+                                    await _supabaseService.criarAnfitriaComConvidados(
+                                      nome: nome,
+                                      numero: numero,
+                                      convidados: convidados,
+                                      confirmacao: true,
+                                    );
+                                    if (mounted) {
+                                      setState(() {
+                                        _carregarDados();
+                                      });
+                                      if (!context.mounted) return;
+                                      Navigator.pop(dialogCtx);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Anfitrião e convidados adicionados')),
+                                      );
+                                    }
+                                    setStateSB(() => salvando = false);
+                                  },
+                            child: salvando
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Text('Salvar'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: salvando
-                    ? null
-                    : () async {
-                        final nome = nomeCtrl.text.trim();
-                        final numero = numeroCtrl.text.trim();
-                        if (nome.isEmpty || numero.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Preencha nome e telefone do anfitrião',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        final digits = numero.replaceAll(RegExp(r'\D'), '');
-                        if (digits.length != 11) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Por favor, digite um telefone válido com 11 dígitos',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-
-                        final convidados = <Map<String, dynamic>>[];
-                        for (var i = 0; i < guestNameCtrls.length; i++) {
-                          final nomeConvidado = guestNameCtrls[i].text.trim();
-                          if (nomeConvidado.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Preencha o nome do convidado ${i + 1}',
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-                          final idadeTexto = guestAgeCtrls[i].text.trim();
-                          final idade = idadeTexto.isEmpty
-                              ? null
-                              : int.tryParse(idadeTexto);
-                          convidados.add({
-                            'nome': nomeConvidado,
-                            'idade': idade,
-                          });
-                        }
-
-                        setStateSB(() => salvando = true);
-                        await _supabaseService.criarAnfitriaComConvidados(
-                          nome: nome,
-                          numero: numero,
-                          convidados: convidados,
-                          confirmacao: true,
-                        );
-                        if (mounted) {
-                          setState(() {
-                            _carregarDados();
-                          });
-                          if (!context.mounted) return;
-                          Navigator.pop(dialogCtx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Anfitrião e convidados adicionados',
-                              ),
-                            ),
-                          );
-                        }
-                        setStateSB(() => salvando = false);
-                      },
-                child: salvando
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Salvar'),
-              ),
-            ],
           );
         },
       ),
@@ -1645,140 +2399,228 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     bool salvando = false;
     final anfitrioesFuture = _supabaseService.obterTodosAnfitriaos();
 
+    InputDecoration styledInput(String label, IconData icon) {
+      return InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 18),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTheme.primaryColor, width: 2)),
+      );
+    }
+
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setStateSB) {
-          return AlertDialog(
-            title: const Text('Adicionar convidado'),
-            content: FutureBuilder<List<Anfitriao>>(
-              future: anfitrioesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                    height: 80,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Text('Erro ao carregar anfitriões: ${snapshot.error}');
-                }
-                final anfitrioes = snapshot.data ?? [];
-                if (anfitrioes.isEmpty) {
-                  return const Text(
-                    'Nenhum anfitrião cadastrado. Crie um anfitrião primeiro.',
-                  );
-                }
-
-                anfitriaoSelecionado ??= anfitrioes.first.id;
-
-                return SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: nomeCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Nome do convidado',
-                          prefixIcon: Icon(FontAwesomeIcons.user),
-                        ),
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 480),
+              child: FutureBuilder<List<Anfitriao>>(
+                future: anfitrioesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text('Erro ao carregar anfitriões: ${snapshot.error}'),
+                    );
+                  }
+                  final anfitrioes = snapshot.data ?? [];
+                  if (anfitrioes.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(FontAwesomeIcons.circleExclamation, size: 40, color: Colors.amber.shade600),
+                          const SizedBox(height: 12),
+                          Text('Nenhum anfitrião cadastrado.', style: GoogleFonts.lato(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text('Crie um anfitrião primeiro.', style: GoogleFonts.lato(color: AppTheme.lightTextColor)),
+                          const SizedBox(height: 16),
+                          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Fechar')),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: idadeCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Idade (opcional)',
-                          prefixIcon: Icon(FontAwesomeIcons.cakeCandles),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        initialValue: anfitriaoSelecionado,
-                        items: anfitrioes
-                            .map(
-                              (a) => DropdownMenuItem(
-                                value: a.id,
-                                child: Text(a.nome),
+                    );
+                  }
+
+                  anfitriaoSelecionado ??= anfitrioes.first.id;
+
+                  return SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(colors: [AppTheme.primaryColor, AppTheme.accentColor]),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(FontAwesomeIcons.userPlus, color: Colors.white, size: 20),
                               ),
-                            )
-                            .toList(),
-                        onChanged: (value) =>
-                            setStateSB(() => anfitriaoSelecionado = value),
-                        decoration: const InputDecoration(
-                          labelText: 'Anfitrião',
-                          prefixIcon: Icon(FontAwesomeIcons.houseUser),
-                        ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Novo Convidado',
+                                      style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
+                                    ),
+                                    Text(
+                                      'Adicione um convidado a um anfitrião',
+                                      style: GoogleFonts.lato(fontSize: 12, color: AppTheme.lightTextColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.pop(dialogCtx),
+                                icon: const Icon(Icons.close, size: 20),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.grey.shade100,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Informações',
+                            style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.lightTextColor),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: nomeCtrl,
+                            decoration: styledInput('Nome do convidado', FontAwesomeIcons.user),
+                          ),
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: idadeCtrl,
+                            decoration: styledInput('Idade (opcional)', FontAwesomeIcons.cakeCandles),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 14),
+                          DropdownButtonFormField<String>(
+                            value: anfitriaoSelecionado,
+                            items: anfitrioes
+                                .map((a) => DropdownMenuItem(value: a.id, child: Text(a.nome)))
+                                .toList(),
+                            onChanged: (value) => setStateSB(() => anfitriaoSelecionado = value),
+                            decoration: styledInput('Anfitrião', FontAwesomeIcons.houseUser),
+                          ),
+                          const SizedBox(height: 24),
+                          // Ações
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(dialogCtx),
+                                child: const Text('Cancelar'),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: salvando
+                                    ? null
+                                    : () async {
+                                        final nome = nomeCtrl.text.trim();
+                                        if (nome.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Digite o nome do convidado')),
+                                          );
+                                          return;
+                                        }
+                                        if (anfitriaoSelecionado == null) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Selecione um anfitrião')),
+                                          );
+                                          return;
+                                        }
+                                        final idade = idadeCtrl.text.trim().isEmpty
+                                            ? null
+                                            : int.tryParse(idadeCtrl.text.trim());
+                                        setStateSB(() => salvando = true);
+                                        await _supabaseService.criarConvidado(
+                                          nome: nome,
+                                          idAnfitriao: anfitriaoSelecionado!,
+                                          idade: idade,
+                                        );
+                                        if (mounted) {
+                                          setState(() {
+                                            _convidados = _supabaseService.obterTodosConvidadosComAnfitriao();
+                                            _estatisticas = _supabaseService.obterEstatisticas();
+                                          });
+                                          if (!context.mounted) return;
+                                          Navigator.pop(dialogCtx);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Convidado adicionado')),
+                                          );
+                                        }
+                                        setStateSB(() => salvando = false);
+                                      },
+                                child: salvando
+                                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                    : const Text('Salvar'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                  );
+                },
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: salvando
-                    ? null
-                    : () async {
-                        final nome = nomeCtrl.text.trim();
-                        if (nome.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Digite o nome do convidado'),
-                            ),
-                          );
-                          return;
-                        }
-                        if (anfitriaoSelecionado == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Selecione um anfitrião'),
-                            ),
-                          );
-                          return;
-                        }
-                        final idade = idadeCtrl.text.trim().isEmpty
-                            ? null
-                            : int.tryParse(idadeCtrl.text.trim());
-                        setStateSB(() => salvando = true);
-                        await _supabaseService.criarConvidado(
-                          nome: nome,
-                          idAnfitriao: anfitriaoSelecionado!,
-                          idade: idade,
-                        );
-                        if (mounted) {
-                          setState(() {
-                            _convidados = _supabaseService
-                                .obterTodosConvidados();
-                            _estatisticas = _supabaseService
-                                .obterEstatisticas();
-                          });
-                          if (!context.mounted) return;
-                          Navigator.pop(dialogCtx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Convidado adicionado'),
-                            ),
-                          );
-                        }
-                        setStateSB(() => salvando = false);
-                      },
-                child: salvando
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Salvar'),
-              ),
-            ],
           );
         },
       ),
     );
   }
+}
+
+class _StatData {
+  final String titulo;
+  final String valor;
+  final String subtitulo;
+  final IconData icon;
+  final Color color;
+  final double? progress;
+
+  _StatData(
+    this.titulo,
+    this.valor,
+    this.subtitulo,
+    this.icon,
+    this.color, {
+    this.progress,
+  });
+}
+
+class _MenuItemData {
+  final String label;
+  final IconData icon;
+  final int index;
+
+  _MenuItemData(this.label, this.icon, this.index);
 }

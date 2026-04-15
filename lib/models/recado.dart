@@ -23,10 +23,10 @@ class Recado {
       mensagem: json['mensagem'] ?? '',
       aprovado: json['aprovado'] ?? false,
       datCriacao: json['dat_criacao'] != null
-          ? DateTime.parse(json['dat_criacao'])
+          ? DateTime.parse(json['dat_criacao']).toLocal()
           : DateTime.now(),
       datExclusao: json['dat_exclusao'] != null
-          ? DateTime.parse(json['dat_exclusao'])
+          ? DateTime.parse(json['dat_exclusao']).toLocal()
           : null,
     );
   }

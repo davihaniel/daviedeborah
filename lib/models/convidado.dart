@@ -3,6 +3,7 @@ class Convidado {
   final String nome;
   final int? idade;
   final String idAnfitriao;
+  final String? nomeAnfitriao;
   final DateTime datCriacao;
   final DateTime datAtualizacao;
   final DateTime? datExclusao;
@@ -12,6 +13,7 @@ class Convidado {
     required this.nome,
     this.idade,
     required this.idAnfitriao,
+    this.nomeAnfitriao,
     required this.datCriacao,
     required this.datAtualizacao,
     this.datExclusao,
@@ -19,19 +21,24 @@ class Convidado {
 
   /// Cria um Convidado a partir de um Map (JSON do Supabase)
   factory Convidado.fromJson(Map<String, dynamic> json) {
+    String? nomeAnf;
+    if (json['anfitriao'] is Map) {
+      nomeAnf = json['anfitriao']['nome'];
+    }
     return Convidado(
       id: json['id'] ?? '',
       nome: json['nome'] ?? '',
       idade: json['idade'],
       idAnfitriao: json['id_anfitriao'] ?? '',
+      nomeAnfitriao: nomeAnf,
       datCriacao: json['dat_criacao'] != null
-          ? DateTime.parse(json['dat_criacao'])
+          ? DateTime.parse(json['dat_criacao']).toLocal()
           : DateTime.now(),
       datAtualizacao: json['dat_atualizacao'] != null
-          ? DateTime.parse(json['dat_atualizacao'])
+          ? DateTime.parse(json['dat_atualizacao']).toLocal()
           : DateTime.now(),
       datExclusao: json['dat_exclusao'] != null
-          ? DateTime.parse(json['dat_exclusao'])
+          ? DateTime.parse(json['dat_exclusao']).toLocal()
           : null,
     );
   }
@@ -55,6 +62,7 @@ class Convidado {
     String? nome,
     int? idade,
     String? idAnfitriao,
+    String? nomeAnfitriao,
     DateTime? datCriacao,
     DateTime? datAtualizacao,
     DateTime? datExclusao,
@@ -64,6 +72,7 @@ class Convidado {
       nome: nome ?? this.nome,
       idade: idade ?? this.idade,
       idAnfitriao: idAnfitriao ?? this.idAnfitriao,
+      nomeAnfitriao: nomeAnfitriao ?? this.nomeAnfitriao,
       datCriacao: datCriacao ?? this.datCriacao,
       datAtualizacao: datAtualizacao ?? this.datAtualizacao,
       datExclusao: datExclusao ?? this.datExclusao,
