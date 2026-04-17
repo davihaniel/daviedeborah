@@ -314,7 +314,7 @@ class SupabaseService {
           .select()
           .eq('aprovado', true)
           .isFilter('dat_exclusao', null)
-          .order('dat_criacao', ascending: false);
+          .order('dat_criacao', ascending: true);
 
       final list = (response as List).map((e) => Recado.fromJson(e)).toList();
       return list;
