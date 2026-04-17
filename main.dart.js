@@ -50936,7 +50936,7 @@ k=$.dB().b
 k===$&&A.a()
 k=k.hh("recado").jE(0).lU("aprovado",!0)
 s=7
-return A.o(A.m1(k.mE(k.qd("dat_exclusao","is.null")),k.$ti.c).uX(0,"dat_criacao",!1),$async$zq)
+return A.o(A.m1(k.mE(k.qd("dat_exclusao","is.null")),k.$ti.c).uX(0,"dat_criacao",!0),$async$zq)
 case 7:n=b
 k=J.jj(n,new A.auk(),t.mG)
 j=A.a5(k,k.$ti.h("aA.E"))
