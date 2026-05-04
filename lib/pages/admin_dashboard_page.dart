@@ -11,6 +11,10 @@ import '../config/app_theme.dart';
 import '../utils/extensions.dart';
 import 'rsvp_page.dart';
 
+enum _ConvidadoOrdenacaoCampo { nome, dataCriacao }
+
+enum _AnfitriaoOrdenacaoCampo { nome, dataCriacao }
+
 class AdminDashboardPage extends StatefulWidget {
   final AdminStore adminStore;
   final VoidCallback onLogout;
@@ -37,6 +41,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   String _filtroNomeAnfitriao = '';
   String _filtroNomeConvidado = '';
   String _filtroNomeRecado = '';
+  String _filtroAnfitriaoId = '';
+  _ConvidadoOrdenacaoCampo _ordenacaoConvidados = _ConvidadoOrdenacaoCampo.nome;
+  bool _ordemConvidadosCrescente = true;
+  _AnfitriaoOrdenacaoCampo _ordenacaoAnfitrioes = _AnfitriaoOrdenacaoCampo.nome;
+  bool _ordemAnfitrioesCrescente = true;
 
   @override
   void initState() {
@@ -49,6 +58,435 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     _anfitrioes = _supabaseService.obterTodosAnfitriaos();
     _convidados = _supabaseService.obterTodosConvidadosComAnfitriao();
     _recados = _supabaseService.obterTodosRecados();
+  }
+
+  List<Convidado> _aplicarFiltrosConvidados(List<Convidado> convidados) {
+    final termoBusca = _filtroNomeConvidado.trim().toLowerCase();
+
+    final filtrados = convidados.where((convidado) {
+      final correspondeNome = termoBusca.isEmpty ||
+          convidado.nome.toLowerCase().contains(termoBusca);
+      final correspondeAnfitriao =
+          _filtroAnfitriaoId.isEmpty || convidado.idAnfitriao == _filtroAnfitriaoId;
+
+      return correspondeNome && correspondeAnfitriao;
+    }).toList();
+
+    filtrados.sort((anterior, atual) {
+      int resultado;
+
+      switch (_ordenacaoConvidados) {
+        case _ConvidadoOrdenacaoCampo.nome:
+          resultado = anterior.nome.toLowerCase().compareTo(atual.nome.toLowerCase());
+          if (resultado == 0) {
+            resultado = anterior.datCriacao.compareTo(atual.datCriacao);
+          }
+        case _ConvidadoOrdenacaoCampo.dataCriacao:
+          resultado = anterior.datCriacao.compareTo(atual.datCriacao);
+          if (resultado == 0) {
+            resultado = anterior.nome.toLowerCase().compareTo(atual.nome.toLowerCase());
+          }
+      }
+
+      return _ordemConvidadosCrescente ? resultado : -resultado;
+    });
+
+    return filtrados;
+  }
+
+  List<DropdownMenuItem<String>> _buildAnfitriaoOptions(List<Convidado> convidados) {
+    final anfitrioes = <String, String>{};
+
+    for (final convidado in convidados) {
+      if (convidado.idAnfitriao.isEmpty) {
+        continue;
+      }
+
+      anfitrioes[convidado.idAnfitriao] =
+          convidado.nomeAnfitriao?.trim().isNotEmpty == true
+          ? convidado.nomeAnfitriao!.trim()
+          : 'Sem anfitrião';
+    }
+
+    final items = anfitrioes.entries.toList()
+      ..sort((anterior, atual) =>
+          anterior.value.toLowerCase().compareTo(atual.value.toLowerCase()));
+
+    return [
+      const DropdownMenuItem<String>(
+        value: '',
+        child: Text('Todos os anfitriões'),
+      ),
+      ...items.map(
+        (item) => DropdownMenuItem<String>(
+          value: item.key,
+          child: Text(item.value),
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildControlesConvidados(bool isMobile, List<Convidado> convidados) {
+    final anfitriaoItems = _buildAnfitriaoOptions(convidados);
+
+    return Column(
+      children: [
+        if (isMobile) ...[
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Pesquisar convidado...',
+              prefixIcon: const Icon(FontAwesomeIcons.magnifyingGlass),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _filtroNomeConvidado = value;
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _filtroAnfitriaoId,
+            decoration: InputDecoration(
+              labelText: 'Anfitrião',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            items: anfitriaoItems,
+            onChanged: (value) {
+              setState(() {
+                _filtroAnfitriaoId = value ?? '';
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Nome'),
+                selected: _ordenacaoConvidados == _ConvidadoOrdenacaoCampo.nome,
+                onSelected: (_) {
+                  setState(() {
+                    _ordenacaoConvidados = _ConvidadoOrdenacaoCampo.nome;
+                  });
+                },
+              ),
+              ChoiceChip(
+                label: const Text('Data de criação'),
+                selected: _ordenacaoConvidados == _ConvidadoOrdenacaoCampo.dataCriacao,
+                onSelected: (_) {
+                  setState(() {
+                    _ordenacaoConvidados = _ConvidadoOrdenacaoCampo.dataCriacao;
+                  });
+                },
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _ordemConvidadosCrescente = !_ordemConvidadosCrescente;
+                  });
+                },
+                icon: Icon(
+                  _ordemConvidadosCrescente
+                      ? FontAwesomeIcons.arrowUpAZ
+                      : FontAwesomeIcons.arrowDownZA,
+                  size: 14,
+                ),
+                label: Text(
+                  _ordemConvidadosCrescente ? 'Crescente' : 'Decrescente',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(FontAwesomeIcons.plus),
+              label: const Text('Adicionar convidado'),
+              onPressed: () => _abrirDialogNovoConvidado(isMobile),
+            ),
+          ),
+        ] else ...[
+          Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Pesquisar convidado...',
+                        prefixIcon: const Icon(FontAwesomeIcons.magnifyingGlass),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _filtroNomeConvidado = value;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: DropdownButtonFormField<String>(
+                      value: _filtroAnfitriaoId,
+                      decoration: InputDecoration(
+                        labelText: 'Anfitrião',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      items: anfitriaoItems,
+                      onChanged: (value) {
+                        setState(() {
+                          _filtroAnfitriaoId = value ?? '';
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    icon: const Icon(FontAwesomeIcons.plus),
+                    label: const Text('Adicionar convidado'),
+                    onPressed: () => _abrirDialogNovoConvidado(isMobile),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Nome'),
+                      selected: _ordenacaoConvidados == _ConvidadoOrdenacaoCampo.nome,
+                      onSelected: (_) {
+                        setState(() {
+                          _ordenacaoConvidados = _ConvidadoOrdenacaoCampo.nome;
+                        });
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Data de criação'),
+                      selected: _ordenacaoConvidados == _ConvidadoOrdenacaoCampo.dataCriacao,
+                      onSelected: (_) {
+                        setState(() {
+                          _ordenacaoConvidados = _ConvidadoOrdenacaoCampo.dataCriacao;
+                        });
+                      },
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _ordemConvidadosCrescente = !_ordemConvidadosCrescente;
+                        });
+                      },
+                      icon: Icon(
+                        _ordemConvidadosCrescente
+                            ? FontAwesomeIcons.arrowUpAZ
+                            : FontAwesomeIcons.arrowDownZA,
+                        size: 14,
+                      ),
+                      label: Text(
+                        _ordemConvidadosCrescente ? 'Crescente' : 'Decrescente',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<Anfitriao> _aplicarFiltrosAnfitrioes(List<Anfitriao> anfitrioes) {
+    final termoBusca = _filtroNomeAnfitriao.trim().toLowerCase();
+
+    final filtrados = anfitrioes.where((anfitriao) {
+      return termoBusca.isEmpty || anfitriao.nome.toLowerCase().contains(termoBusca);
+    }).toList();
+
+    filtrados.sort((anterior, atual) {
+      int resultado;
+
+      switch (_ordenacaoAnfitrioes) {
+        case _AnfitriaoOrdenacaoCampo.nome:
+          resultado = anterior.nome.toLowerCase().compareTo(atual.nome.toLowerCase());
+          if (resultado == 0) {
+            resultado = anterior.datCriacao.compareTo(atual.datCriacao);
+          }
+        case _AnfitriaoOrdenacaoCampo.dataCriacao:
+          resultado = anterior.datCriacao.compareTo(atual.datCriacao);
+          if (resultado == 0) {
+            resultado = anterior.nome.toLowerCase().compareTo(atual.nome.toLowerCase());
+          }
+      }
+
+      return _ordemAnfitrioesCrescente ? resultado : -resultado;
+    });
+
+    return filtrados;
+  }
+
+  Widget _buildControlesAnfitrioes(bool isMobile) {
+    return Column(
+      children: [
+        if (isMobile) ...[
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Pesquisar anfitrião...',
+              prefixIcon: const Icon(FontAwesomeIcons.magnifyingGlass),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _filtroNomeAnfitriao = value;
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Nome'),
+                selected: _ordenacaoAnfitrioes == _AnfitriaoOrdenacaoCampo.nome,
+                onSelected: (_) {
+                  setState(() {
+                    _ordenacaoAnfitrioes = _AnfitriaoOrdenacaoCampo.nome;
+                  });
+                },
+              ),
+              ChoiceChip(
+                label: const Text('Data de criação'),
+                selected: _ordenacaoAnfitrioes == _AnfitriaoOrdenacaoCampo.dataCriacao,
+                onSelected: (_) {
+                  setState(() {
+                    _ordenacaoAnfitrioes = _AnfitriaoOrdenacaoCampo.dataCriacao;
+                  });
+                },
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _ordemAnfitrioesCrescente = !_ordemAnfitrioesCrescente;
+                  });
+                },
+                icon: Icon(
+                  _ordemAnfitrioesCrescente
+                      ? FontAwesomeIcons.arrowUpAZ
+                      : FontAwesomeIcons.arrowDownZA,
+                  size: 14,
+                ),
+                label: Text(
+                  _ordemAnfitrioesCrescente ? 'Crescente' : 'Decrescente',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(FontAwesomeIcons.plus),
+              label: const Text('Novo anfitrião + convidados'),
+              onPressed: () => _abrirDialogNovoAnfitriao(isMobile),
+            ),
+          ),
+        ] else ...[
+          Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Pesquisar anfitrião...',
+                        prefixIcon: const Icon(FontAwesomeIcons.magnifyingGlass),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _filtroNomeAnfitriao = value;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    icon: const Icon(FontAwesomeIcons.plus),
+                    label: const Text('Novo anfitrião + convidados'),
+                    onPressed: () => _abrirDialogNovoAnfitriao(isMobile),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Nome'),
+                      selected: _ordenacaoAnfitrioes == _AnfitriaoOrdenacaoCampo.nome,
+                      onSelected: (_) {
+                        setState(() {
+                          _ordenacaoAnfitrioes = _AnfitriaoOrdenacaoCampo.nome;
+                        });
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Data de criação'),
+                      selected: _ordenacaoAnfitrioes == _AnfitriaoOrdenacaoCampo.dataCriacao,
+                      onSelected: (_) {
+                        setState(() {
+                          _ordenacaoAnfitrioes = _AnfitriaoOrdenacaoCampo.dataCriacao;
+                        });
+                      },
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _ordemAnfitrioesCrescente = !_ordemAnfitrioesCrescente;
+                        });
+                      },
+                      icon: Icon(
+                        _ordemAnfitrioesCrescente
+                            ? FontAwesomeIcons.arrowUpAZ
+                            : FontAwesomeIcons.arrowDownZA,
+                        size: 14,
+                      ),
+                      label: Text(
+                        _ordemAnfitrioesCrescente ? 'Crescente' : 'Decrescente',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -475,7 +913,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
           _StatData(
             'Adultos',
-            '$totalAdultos',
+            '$totalAdultos/160',
             'pessoas',
             FontAwesomeIcons.userTie,
             AppTheme.accentColor,
@@ -682,70 +1120,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         }
 
         final anfitrioes = snapshot.data ?? [];
-        final filtrados = anfitrioes
-            .where(
-              (a) => a.nome.toLowerCase().contains(
-                _filtroNomeAnfitriao.toLowerCase(),
-              ),
-            )
-            .toList();
+        final filtrados = _aplicarFiltrosAnfitrioes(anfitrioes);
 
         return Column(
           children: [
-            if (isMobile) ...[
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Pesquisar anfitrião...',
-                  prefixIcon: const Icon(FontAwesomeIcons.magnifyingGlass),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _filtroNomeAnfitriao = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(FontAwesomeIcons.plus),
-                  label: const Text('Novo anfitrião + convidados'),
-                  onPressed: () => _abrirDialogNovoAnfitriao(isMobile),
-                ),
-              ),
-            ] else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Pesquisar anfitrião...',
-                        prefixIcon: const Icon(
-                          FontAwesomeIcons.magnifyingGlass,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _filtroNomeAnfitriao = value;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    icon: const Icon(FontAwesomeIcons.plus),
-                    label: const Text('Novo anfitrião + convidados'),
-                    onPressed: () => _abrirDialogNovoAnfitriao(isMobile),
-                  ),
-                ],
-              ),
-            ],
+            _buildControlesAnfitrioes(isMobile),
             const SizedBox(height: 12),
             Expanded(
               child: filtrados.isEmpty
@@ -903,70 +1282,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         }
 
         final convidados = snapshot.data ?? [];
-        final filtrados = convidados
-            .where(
-              (c) => c.nome.toLowerCase().contains(
-                _filtroNomeConvidado.toLowerCase(),
-              ),
-            )
-            .toList();
+        final filtrados = _aplicarFiltrosConvidados(convidados);
 
         return Column(
           children: [
-            if (isMobile) ...[
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Pesquisar convidado...',
-                  prefixIcon: const Icon(FontAwesomeIcons.magnifyingGlass),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _filtroNomeConvidado = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(FontAwesomeIcons.plus),
-                  label: const Text('Adicionar convidado'),
-                  onPressed: () => _abrirDialogNovoConvidado(isMobile),
-                ),
-              ),
-            ] else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Pesquisar convidado...',
-                        prefixIcon: const Icon(
-                          FontAwesomeIcons.magnifyingGlass,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _filtroNomeConvidado = value;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    icon: const Icon(FontAwesomeIcons.plus),
-                    label: const Text('Adicionar convidado'),
-                    onPressed: () => _abrirDialogNovoConvidado(isMobile),
-                  ),
-                ],
-              ),
-            ],
+            _buildControlesConvidados(isMobile, convidados),
             const SizedBox(height: 12),
             Expanded(
               child: filtrados.isEmpty
