@@ -42,10 +42,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   String _filtroNomeConvidado = '';
   String _filtroNomeRecado = '';
   String _filtroAnfitriaoId = '';
-  _ConvidadoOrdenacaoCampo _ordenacaoConvidados = _ConvidadoOrdenacaoCampo.nome;
-  bool _ordemConvidadosCrescente = true;
-  _AnfitriaoOrdenacaoCampo _ordenacaoAnfitrioes = _AnfitriaoOrdenacaoCampo.nome;
-  bool _ordemAnfitrioesCrescente = true;
+  _ConvidadoOrdenacaoCampo _ordenacaoConvidados = _ConvidadoOrdenacaoCampo.dataCriacao;
+  bool _ordemConvidadosCrescente = false;
+  _AnfitriaoOrdenacaoCampo _ordenacaoAnfitrioes = _AnfitriaoOrdenacaoCampo.dataCriacao;
+  bool _ordemAnfitrioesCrescente = false;
 
   @override
   void initState() {
