@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/anfitriao.dart';
 import '../models/convidado.dart';
 import '../models/recado.dart';
+import '../utils/extensions.dart';
 
 class SupabaseService {
   static final SupabaseService _instance = SupabaseService._internal();
@@ -73,12 +74,12 @@ class SupabaseService {
       final response = await client
           .from('anfitriao')
           .select()
-          .isFilter('dat_exclusao', null)
-          .order('nome', ascending: true);
+          .isFilter('dat_exclusao', null);
 
       final list = (response as List)
           .map((e) => Anfitriao.fromJson(e))
-          .toList();
+          .toList()
+        ..sort((a, b) => a.nome.normalizeForSort.compareTo(b.nome.normalizeForSort));
       return list;
     } catch (e) {
       throw Exception('Erro ao obter anfitriões: $e');
@@ -199,12 +200,12 @@ class SupabaseService {
           .from('convidado')
           .select()
           .eq('id_anfitriao', idAnfitriao)
-          .isFilter('dat_exclusao', null)
-          .order('nome', ascending: true);
+          .isFilter('dat_exclusao', null);
 
       final list = (response as List)
           .map((e) => Convidado.fromJson(e))
-          .toList();
+          .toList()
+        ..sort((a, b) => a.nome.normalizeForSort.compareTo(b.nome.normalizeForSort));
       return list;
     } catch (e) {
       throw Exception('Erro ao obter convidados: $e');
@@ -217,15 +218,34 @@ class SupabaseService {
       final response = await client
           .from('convidado')
           .select('*, anfitriao!id_anfitriao(nome)')
-          .isFilter('dat_exclusao', null)
-          .order('nome', ascending: true);
+          .isFilter('dat_exclusao', null);
 
       final list = (response as List)
           .map((e) => Convidado.fromJson(e))
-          .toList();
+          .toList()
+        ..sort((a, b) => a.nome.normalizeForSort.compareTo(b.nome.normalizeForSort));
       return list;
     } catch (e) {
       throw Exception('Erro ao obter convidados com anfitrião: $e');
+    }
+  }
+
+  /// Obtém convidados de anfitriões confirmados (para exportação PDF)
+  Future<List<Convidado>> obterConvidadosConfirmados() async {
+    try {
+      final response = await client
+          .from('convidado')
+          .select('*, anfitriao!id_anfitriao(nome, confirmacao)')
+          .isFilter('dat_exclusao', null);
+
+      final list = (response as List)
+          .map((e) => Convidado.fromJson(e))
+          .where((c) => c.confirmacaoAnfitriao == true)
+          .toList()
+        ..sort((a, b) => a.nome.normalizeForSort.compareTo(b.nome.normalizeForSort));
+      return list;
+    } catch (e) {
+      throw Exception('Erro ao obter convidados confirmados: $e');
     }
   }
 
@@ -235,12 +255,12 @@ class SupabaseService {
       final response = await client
           .from('convidado')
           .select()
-          .isFilter('dat_exclusao', null)
-          .order('nome', ascending: true);
+          .isFilter('dat_exclusao', null);
 
       final list = (response as List)
           .map((e) => Convidado.fromJson(e))
-          .toList();
+          .toList()
+        ..sort((a, b) => a.nome.normalizeForSort.compareTo(b.nome.normalizeForSort));
       return list;
     } catch (e) {
       throw Exception('Erro ao obter convidados: $e');

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/supabase_service.dart';
+import '../services/pdf_service.dart';
 import '../models/anfitriao.dart';
 import '../models/convidado.dart';
 import '../models/recado.dart';
@@ -47,6 +49,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   _AnfitriaoOrdenacaoCampo _ordenacaoAnfitrioes = _AnfitriaoOrdenacaoCampo.dataCriacao;
   bool _ordemAnfitrioesCrescente = false;
 
+  bool _exportandoPdf = false;
+  bool _agruparPorAnfitriaoPdf = false;
+
   @override
   void initState() {
     super.initState();
@@ -77,14 +82,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
       switch (_ordenacaoConvidados) {
         case _ConvidadoOrdenacaoCampo.nome:
-          resultado = anterior.nome.toLowerCase().compareTo(atual.nome.toLowerCase());
+          resultado = anterior.nome.normalizeForSort.compareTo(atual.nome.normalizeForSort);
           if (resultado == 0) {
             resultado = anterior.datCriacao.compareTo(atual.datCriacao);
           }
         case _ConvidadoOrdenacaoCampo.dataCriacao:
           resultado = anterior.datCriacao.compareTo(atual.datCriacao);
           if (resultado == 0) {
-            resultado = anterior.nome.toLowerCase().compareTo(atual.nome.toLowerCase());
+            resultado = anterior.nome.normalizeForSort.compareTo(atual.nome.normalizeForSort);
           }
       }
 
@@ -110,7 +115,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
     final items = anfitrioes.entries.toList()
       ..sort((anterior, atual) =>
-          anterior.value.toLowerCase().compareTo(atual.value.toLowerCase()));
+          anterior.value.normalizeForSort.compareTo(atual.value.normalizeForSort));
 
     return [
       const DropdownMenuItem<String>(
@@ -148,7 +153,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _filtroAnfitriaoId,
+            initialValue: _filtroAnfitriaoId,
             decoration: InputDecoration(
               labelText: 'Anfitrião',
               border: OutlineInputBorder(
@@ -212,6 +217,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               onPressed: () => _abrirDialogNovoConvidado(isMobile),
             ),
           ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: _exportandoPdf
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(FontAwesomeIcons.filePdf, size: 14),
+              label: Text(_exportandoPdf ? 'Gerando...' : 'Exportar PDF'),
+              onPressed: _exportandoPdf
+                  ? null
+                  : () => _exportarPdf(context, convidados),
+            ),
+          ),
         ] else ...[
           Column(
             children: [
@@ -238,7 +260,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<String>(
-                      value: _filtroAnfitriaoId,
+                      initialValue: _filtroAnfitriaoId,
                       decoration: InputDecoration(
                         labelText: 'Anfitrião',
                         border: OutlineInputBorder(
@@ -258,6 +280,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     icon: const Icon(FontAwesomeIcons.plus),
                     label: const Text('Adicionar convidado'),
                     onPressed: () => _abrirDialogNovoConvidado(isMobile),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    icon: _exportandoPdf
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(FontAwesomeIcons.filePdf, size: 14),
+                    label: Text(_exportandoPdf ? 'Gerando...' : 'Exportar PDF'),
+                    onPressed: _exportandoPdf
+                        ? null
+                        : () => _exportarPdf(context, convidados),
                   ),
                 ],
               ),
@@ -324,14 +360,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
       switch (_ordenacaoAnfitrioes) {
         case _AnfitriaoOrdenacaoCampo.nome:
-          resultado = anterior.nome.toLowerCase().compareTo(atual.nome.toLowerCase());
+          resultado = anterior.nome.normalizeForSort.compareTo(atual.nome.normalizeForSort);
           if (resultado == 0) {
             resultado = anterior.datCriacao.compareTo(atual.datCriacao);
           }
         case _AnfitriaoOrdenacaoCampo.dataCriacao:
           resultado = anterior.datCriacao.compareTo(atual.datCriacao);
           if (resultado == 0) {
-            resultado = anterior.nome.toLowerCase().compareTo(atual.nome.toLowerCase());
+            resultado = anterior.nome.normalizeForSort.compareTo(atual.nome.normalizeForSort);
           }
       }
 
@@ -1653,6 +1689,125 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final url = 'https://wa.me/55$telefone';
 
     launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _exportarPdf(
+    BuildContext context,
+    List<Convidado> convidadosDaTela,
+  ) async {
+    // Diálogo de opções antes de gerar
+    bool? confirmar;
+    bool agrupar = _agruparPorAnfitriaoPdf;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setStateSB) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  FontAwesomeIcons.filePdf,
+                  color: AppTheme.primaryColor,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Exportar PDF',
+                style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'A lista será gerada com a mesma ordenação exibida na tela, '
+                'contendo apenas convidados de anfitriões confirmados.',
+                style: GoogleFonts.lato(fontSize: 13, color: AppTheme.lightTextColor),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                value: agrupar,
+                onChanged: (v) => setStateSB(() => agrupar = v),
+                title: Text(
+                  'Agrupar por anfitrião',
+                  style: GoogleFonts.lato(fontSize: 14),
+                ),
+                subtitle: Text(
+                  'Organiza a lista em seções por anfitrião',
+                  style: GoogleFonts.lato(
+                    fontSize: 12,
+                    color: AppTheme.lightTextColor,
+                  ),
+                ),
+                activeColor: AppTheme.primaryColor,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                confirmar = false;
+                Navigator.pop(dialogCtx);
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(FontAwesomeIcons.filePdf, size: 14),
+              label: const Text('Gerar PDF'),
+              onPressed: () {
+                confirmar = true;
+                setState(() => _agruparPorAnfitriaoPdf = agrupar);
+                Navigator.pop(dialogCtx);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    setState(() => _exportandoPdf = true);
+
+    try {
+      // Busca apenas confirmados e aplica a ordenação da tela
+      final confirmados = await _supabaseService.obterConvidadosConfirmados();
+      final ordenados = _aplicarFiltrosConvidados(confirmados);
+      final stats = await _estatisticas;
+
+      final bytes = await PdfService.gerarListaConvidados(
+        ordenados,
+        stats,
+        agruparPorAnfitriao: _agruparPorAnfitriaoPdf,
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (_) => bytes,
+        name: 'convidados_davi_deborah.pdf',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gerar PDF: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exportandoPdf = false);
+    }
   }
 
   void _deletarAnfitriao(BuildContext context, Anfitriao anfitriao) {

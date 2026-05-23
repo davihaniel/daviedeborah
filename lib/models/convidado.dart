@@ -4,6 +4,7 @@ class Convidado {
   final int? idade;
   final String idAnfitriao;
   final String? nomeAnfitriao;
+  final bool? confirmacaoAnfitriao;
   final DateTime datCriacao;
   final DateTime datAtualizacao;
   final DateTime? datExclusao;
@@ -14,6 +15,7 @@ class Convidado {
     this.idade,
     required this.idAnfitriao,
     this.nomeAnfitriao,
+    this.confirmacaoAnfitriao,
     required this.datCriacao,
     required this.datAtualizacao,
     this.datExclusao,
@@ -22,8 +24,10 @@ class Convidado {
   /// Cria um Convidado a partir de um Map (JSON do Supabase)
   factory Convidado.fromJson(Map<String, dynamic> json) {
     String? nomeAnf;
+    bool? confirmacaoAnf;
     if (json['anfitriao'] is Map) {
       nomeAnf = json['anfitriao']['nome'];
+      confirmacaoAnf = json['anfitriao']['confirmacao'] as bool?;
     }
     return Convidado(
       id: json['id'] ?? '',
@@ -31,6 +35,7 @@ class Convidado {
       idade: json['idade'],
       idAnfitriao: json['id_anfitriao'] ?? '',
       nomeAnfitriao: nomeAnf,
+      confirmacaoAnfitriao: confirmacaoAnf,
       datCriacao: json['dat_criacao'] != null
           ? DateTime.parse(json['dat_criacao']).toLocal()
           : DateTime.now(),
@@ -63,6 +68,7 @@ class Convidado {
     int? idade,
     String? idAnfitriao,
     String? nomeAnfitriao,
+    bool? confirmacaoAnfitriao,
     DateTime? datCriacao,
     DateTime? datAtualizacao,
     DateTime? datExclusao,
@@ -73,6 +79,7 @@ class Convidado {
       idade: idade ?? this.idade,
       idAnfitriao: idAnfitriao ?? this.idAnfitriao,
       nomeAnfitriao: nomeAnfitriao ?? this.nomeAnfitriao,
+      confirmacaoAnfitriao: confirmacaoAnfitriao ?? this.confirmacaoAnfitriao,
       datCriacao: datCriacao ?? this.datCriacao,
       datAtualizacao: datAtualizacao ?? this.datAtualizacao,
       datExclusao: datExclusao ?? this.datExclusao,

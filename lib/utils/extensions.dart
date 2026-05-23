@@ -36,3 +36,17 @@ extension DateExtension on DateTime {
     return '${hour.toString().padLeft(2, '0')}h${minute.toString().padLeft(2, '0')}';
   }
 }
+
+extension StringSortExtension on String {
+  /// Normaliza a string para ordenação alfabética correta em português,
+  /// tratando acentos como equivalentes à letra base (ã → a, ç → c, etc.)
+  String get normalizeForSort => toLowerCase()
+      .replaceAll(RegExp('[àáâãäå]'), 'a')
+      .replaceAll(RegExp('[èéêë]'), 'e')
+      .replaceAll(RegExp('[ìíîï]'), 'i')
+      .replaceAll(RegExp('[òóôõöø]'), 'o')
+      .replaceAll(RegExp('[ùúûü]'), 'u')
+      .replaceAll('ç', 'c')
+      .replaceAll('ñ', 'n')
+      .replaceAll('ý', 'y');
+}

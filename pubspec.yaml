@@ -31,6 +31,10 @@ dependencies:
   package_info_plus: ^9.0.0
   cached_network_image: ^3.4.1
 
+  # Geração e impressão de PDF
+  pdf: ^3.11.0
+  printing: ^5.13.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
