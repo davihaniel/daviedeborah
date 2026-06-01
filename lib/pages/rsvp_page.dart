@@ -166,232 +166,244 @@ class _RsvpPageState extends State<RsvpPage> {
                   color: AppTheme.primaryColor,
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  'Por favor, confirme sua presença até ${appSettings.rsvpLimitDate.dataNomeMes}',
-                  style: GoogleFonts.lato(
-                    fontSize: isMobile ? 15 : 16,
-                    color: AppTheme.lightTextColor,
-                    fontStyle: FontStyle.italic,
+                if (appSettings.rsvpLimitDate.isAfter(DateTime.now())) ...[
+                  Text(
+                    'Por favor, confirme sua presença até ${appSettings.rsvpLimitDate.dataNomeMes}',
+                    style: GoogleFonts.lato(
+                      fontSize: isMobile ? 15 : 16,
+                      color: AppTheme.lightTextColor,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Nome
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Nome Completo *',
-                    hintText: 'Digite seu nome completo',
-                    prefixIcon: const Icon(FontAwesomeIcons.user),
-                    border: OutlineInputBorder(
+                  // Nome
+                  TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Nome Completo *',
+                      hintText: 'Digite seu nome completo',
+                      prefixIcon: const Icon(FontAwesomeIcons.user),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, digite seu nome';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      _store.setNome(value);
+                      _updateHostNameController(value);
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Email
+                  TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Telefone *',
+                      hintText: '(99) 99999-9999',
+                      prefixIcon: const Icon(FontAwesomeIcons.phone),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [PhoneMaskFormatter()],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, digite seu telefone';
+                      }
+                      final digits = value.replaceAll(RegExp(r'\D'), '');
+                      if (digits.length != 11) {
+                        return 'Por favor, digite um telefone válido com 11 dígitos';
+                      }
+                      return null;
+                    },
+                    onChanged: _store.setTelefone,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Confirmação
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, digite seu nome';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    _store.setNome(value);
-                    _updateHostNameController(value);
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                // Email
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Telefone *',
-                    hintText: '(99) 99999-9999',
-                    prefixIcon: const Icon(FontAwesomeIcons.phone),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Você irá ao casamento? *',
+                          style: GoogleFonts.lato(
+                            fontSize: isMobile ? 15 : 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Observer(
+                          builder: (_) {
+                            return RadioGroup<bool>(
+                              onChanged: (value) {
+                                _store.setConfirmado(value!);
+                              },
+                              groupValue: _store.confirmado,
+                              child: Column(
+                                children: [
+                                  RadioListTile<bool>(
+                                    title: const Text('Sim, estarei lá!'),
+                                    value: true,
+                                    activeColor: AppTheme.primaryColor,
+                                  ),
+                                  RadioListTile<bool>(
+                                    title: const Text('Não poderei ir'),
+                                    value: false,
+                                    activeColor: AppTheme.primaryColor,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
                   ),
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [PhoneMaskFormatter()],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, digite seu telefone';
-                    }
-                    final digits = value.replaceAll(RegExp(r'\D'), '');
-                    if (digits.length != 11) {
-                      return 'Por favor, digite um telefone válido com 11 dígitos';
-                    }
-                    return null;
-                  },
-                  onChanged: _store.setTelefone,
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Confirmação
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                  // Número de pessoas (só aparece se confirmado)
+                  Observer(
+                    builder: (_) => _store.confirmado
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Número de acompanhantes (incluindo você):',
+                                style: GoogleFonts.lato(
+                                  fontSize: isMobile ? 15 : 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      if (_store.numeroPessoas > 1) {
+                                        _store.setNumeroPessoas(
+                                          _store.numeroPessoas - 1,
+                                        );
+                                        _syncGuestControllersLength(
+                                          _store.numeroPessoas,
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(FontAwesomeIcons.minus),
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${_store.numeroPessoas}',
+                                      style: GoogleFonts.playfairDisplay(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  IconButton(
+                                    onPressed: () {
+                                      if (_store.numeroPessoas <
+                                          appSettings.countMaxGuests) {
+                                        _store.setNumeroPessoas(
+                                          _store.numeroPessoas + 1,
+                                        );
+                                        _syncGuestControllersLength(
+                                          _store.numeroPessoas,
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(FontAwesomeIcons.plus),
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              _buildGuestsList(context, isMobile),
+                              const SizedBox(height: 24),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Você irá ao casamento? *',
-                        style: GoogleFonts.lato(
-                          fontSize: isMobile ? 15 : 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textColor,
+
+                  const SizedBox(height: 32),
+
+                  // Botão de envio
+                  Observer(
+                    builder: (_) => ElevatedButton(
+                      onPressed: (_store.formularioValido && !_isSubmitting)
+                          ? () => _submitForm(context)
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          vertical: isMobile ? 16 : 20,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Observer(
-                        builder: (_) {
-
-                          return RadioGroup<bool>(
-                            onChanged: (value) {
-                              _store.setConfirmado(value!);
-                            },
-                            groupValue: _store.confirmado,
-                            child: Column(
-                              children: [
-                                RadioListTile<bool>(
-                                  title: const Text('Sim, estarei lá!'),
-                                  value: true,
-                                  activeColor: AppTheme.primaryColor,
+                      child: _isSubmitting
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).primaryColor,
                                 ),
-                                RadioListTile<bool>(
-                                  title: const Text('Não poderei ir'),
-                                  value: false,
-                                  activeColor: AppTheme.primaryColor,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Número de pessoas (só aparece se confirmado)
-                Observer(
-                  builder: (_) => _store.confirmado
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Número de acompanhantes (incluindo você):',
+                              ),
+                            )
+                          : Text(
+                              'Confirmar',
                               style: GoogleFonts.lato(
-                                fontSize: isMobile ? 15 : 16,
+                                fontSize: isMobile ? 16 : 18,
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.textColor,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () {
-                                    if (_store.numeroPessoas > 1) {
-                                      _store.setNumeroPessoas(
-                                        _store.numeroPessoas - 1,
-                                      );
-                                      _syncGuestControllersLength(
-                                        _store.numeroPessoas,
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(FontAwesomeIcons.minus),
-                                  color: AppTheme.primaryColor,
-                                ),
-                                const SizedBox(width: 16),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    '${_store.numeroPessoas}',
-                                    style: GoogleFonts.playfairDisplay(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                IconButton(
-                                  onPressed: () {
-                                    if (_store.numeroPessoas < appSettings.countMaxGuests) {
-                                      _store.setNumeroPessoas(
-                                        _store.numeroPessoas + 1,
-                                      );
-                                      _syncGuestControllersLength(
-                                        _store.numeroPessoas,
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(FontAwesomeIcons.plus),
-                                  color: AppTheme.primaryColor,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                            _buildGuestsList(context, isMobile),
-                            const SizedBox(height: 24),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Botão de envio
-                Observer(
-                  builder: (_) => ElevatedButton(
-                    onPressed: (_store.formularioValido && !_isSubmitting)
-                        ? () => _submitForm(context)
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        vertical: isMobile ? 16 : 20,
-                      ),
                     ),
-                    child: _isSubmitting
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          )
-                        : Text(
-                            'Confirmar',
-                            style: GoogleFonts.lato(
-                              fontSize: isMobile ? 16 : 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                   ),
-                ),
+                ] else ...[
+                  Text(
+                    'O período para confirmação de presença se encerrou no dia ${appSettings.rsvpLimitDate.dataNomeMes}.',
+                    style: GoogleFonts.lato(
+                      fontSize: isMobile ? 15 : 16,
+                      color: AppTheme.lightTextColor,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
 
                 const SizedBox(height: 24),
 
@@ -489,8 +501,9 @@ class _RsvpPageState extends State<RsvpPage> {
                           decoration: InputDecoration(
                             labelText: 'Idade da criança *',
                             hintText: 'ex: 3',
-                            prefixIcon:
-                                const Icon(FontAwesomeIcons.cakeCandles),
+                            prefixIcon: const Icon(
+                              FontAwesomeIcons.cakeCandles,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
