@@ -25,7 +25,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
   final _store = HomeStore();
-  final rsvpLimit = DateTime.now().isAfter(appSettings.rsvpLimitDate);
 
   late String fundoAleatorio;
 
@@ -118,7 +117,7 @@ class _HomePageState extends State<HomePage> {
       Container(key: _sectionKeys['recepcao'], child: const RecepcaoPage()),
       // Presentes Section
       Container(key: _sectionKeys['presentes'], child: const PresentesPage()),
-      if (!rsvpLimit && appSettings.rsvpEnable)
+      if (appSettings.rsvpEnable)
         // RSVP Section
         Container(key: _sectionKeys['rsvp'], child: const RsvpPage()),
       // Recados Section
@@ -362,7 +361,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  if (rsvpLimit == false && appSettings.rsvpEnable) ...[
+                  if (appSettings.rsvpEnable) ...[
                     const SizedBox(height: 32),
                     ElevatedButton.icon(
                       onPressed: () => _scrollToSection('rsvp'),
