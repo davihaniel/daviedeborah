@@ -177,11 +177,17 @@ class SupabaseService {
     required String nome,
     required String idAnfitriao,
     int? idade,
+    bool convidadoHonra = false,
   }) async {
     try {
       final response = await client
           .from('convidado')
-          .insert({'nome': nome, 'idade': idade, 'id_anfitriao': idAnfitriao})
+          .insert({
+            'nome': nome,
+            'idade': idade,
+            'id_anfitriao': idAnfitriao,
+            'convidado_honra': convidadoHonra,
+          })
           .select()
           .single();
 
@@ -273,15 +279,19 @@ class SupabaseService {
     required String nome,
     int? idade,
     String? idAnfitriao,
+    bool? convidadoHonra,
   }) async {
     try {
+      final updates = <String, dynamic>{
+        'nome': nome,
+        'idade': idade,
+        if (idAnfitriao != null) 'id_anfitriao': idAnfitriao,
+        if (convidadoHonra != null) 'convidado_honra': convidadoHonra,
+      };
+
       final response = await client
           .from('convidado')
-          .update({
-            'nome': nome,
-            'idade': idade,
-            if (idAnfitriao != null) 'id_anfitriao': idAnfitriao,
-          })
+          .update(updates)
           .eq('id', id)
           .select()
           .single();
@@ -429,6 +439,7 @@ class SupabaseService {
           nome: convidado['nome'],
           idAnfitriao: anfitriao.id,
           idade: convidado['idade'],
+          convidadoHonra: convidado['convidado_honra'] as bool? ?? false,
         );
         convidadosCriados.add(novoConvidado);
       }

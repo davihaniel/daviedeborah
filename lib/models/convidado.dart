@@ -5,6 +5,7 @@ class Convidado {
   final String idAnfitriao;
   final String? nomeAnfitriao;
   final bool? confirmacaoAnfitriao;
+  final bool convidadoHonra;
   final DateTime datCriacao;
   final DateTime datAtualizacao;
   final DateTime? datExclusao;
@@ -16,6 +17,7 @@ class Convidado {
     required this.idAnfitriao,
     this.nomeAnfitriao,
     this.confirmacaoAnfitriao,
+    this.convidadoHonra = false,
     required this.datCriacao,
     required this.datAtualizacao,
     this.datExclusao,
@@ -36,6 +38,7 @@ class Convidado {
       idAnfitriao: json['id_anfitriao'] ?? '',
       nomeAnfitriao: nomeAnf,
       confirmacaoAnfitriao: confirmacaoAnf,
+        convidadoHonra: json['convidado_honra'] as bool? ?? false,
       datCriacao: json['dat_criacao'] != null
           ? DateTime.parse(json['dat_criacao']).toLocal()
           : DateTime.now(),
@@ -55,6 +58,7 @@ class Convidado {
       'nome': nome,
       'idade': idade,
       'id_anfitriao': idAnfitriao,
+      'convidado_honra': convidadoHonra,
       'dat_criacao': datCriacao.toIso8601String(),
       'dat_atualizacao': datAtualizacao.toIso8601String(),
       'dat_exclusao': datExclusao?.toIso8601String(),
@@ -69,6 +73,7 @@ class Convidado {
     String? idAnfitriao,
     String? nomeAnfitriao,
     bool? confirmacaoAnfitriao,
+    bool? convidadoHonra,
     DateTime? datCriacao,
     DateTime? datAtualizacao,
     DateTime? datExclusao,
@@ -80,6 +85,7 @@ class Convidado {
       idAnfitriao: idAnfitriao ?? this.idAnfitriao,
       nomeAnfitriao: nomeAnfitriao ?? this.nomeAnfitriao,
       confirmacaoAnfitriao: confirmacaoAnfitriao ?? this.confirmacaoAnfitriao,
+      convidadoHonra: convidadoHonra ?? this.convidadoHonra,
       datCriacao: datCriacao ?? this.datCriacao,
       datAtualizacao: datAtualizacao ?? this.datAtualizacao,
       datExclusao: datExclusao ?? this.datExclusao,
@@ -91,6 +97,6 @@ class Convidado {
 
   @override
   String toString() {
-    return 'Convidado(id: $id, nome: $nome, idade: $idade, idAnfitriao: $idAnfitriao)';
+    return 'Convidado(id: $id, nome: $nome, idade: $idade, idAnfitriao: $idAnfitriao, convidadoHonra: $convidadoHonra)';
   }
 }

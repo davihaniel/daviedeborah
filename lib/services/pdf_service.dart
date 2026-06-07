@@ -21,6 +21,8 @@ final _textColor = _hex(0xFF4A4A4A);
 final _lightText = _hex(0xFF8A8A8A);
 final _childBg = PdfColor(1.0, 0.929, 0.835);    // laranja bem claro
 final _childAccent = PdfColor(0.929, 0.506, 0.114); // laranja
+final _honorBg = PdfColor(0.918, 0.960, 0.914);
+final _honorAccent = PdfColor(0.224, 0.545, 0.286);
 final _dangerBg = PdfColor(1.0, 0.918, 0.918);
 final _dangerBorder = PdfColor(0.937, 0.267, 0.267);
 final _statBg = PdfColor(0.973, 0.980, 0.969);
@@ -78,7 +80,12 @@ class PdfService {
       double size = 10,
       PdfColor? color,
     }) =>
-        pw.TextStyle(font: font, fontSize: size, color: color ?? _textColor);
+        pw.TextStyle(
+          font: font,
+          fontSize: size,
+          color: color ?? _textColor,
+          fontFallback: [fontLato],
+        );
 
     // ── Cabeçalho de página (repetido em todas as páginas) ───────────────────
     pw.Widget buildHeader(pw.Context ctx) {
@@ -161,11 +168,13 @@ class PdfService {
     // ── Bloco de texto introdutório ───────────────────────────────────────────
     pw.Widget buildIntro() {
       final regras = [
+        'A seção "Pais dos Noivos" traz os nomes principais para referência da portaria.',
         'Crianças com menos de 6 anos não contam como ocupantes pagantes.',
         'O casamento foi planejado para até 160 convidados pagantes (adultos).',
         'Pessoas que não estão nesta lista não devem entrar.',
         'Não incomodar os noivos em hipótese nenhuma.',
         'A liberação de pessoas é feita somente a pedido dos noivos, por intermédio da Aguida (cerimonial).',
+        'Pessoas com destaque em verde são convidados de honra e podem entrar a partir de 14h.',
       ];
 
       return pw.Container(
@@ -255,6 +264,80 @@ class PdfService {
       );
     }
 
+    pw.Widget buildPaisNoivos() {
+      pw.Widget buildCard(String titulo, List<String> nomes) {
+        return pw.Expanded(
+          child: pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: _statBg,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+              border: pw.Border.all(color: _hex(0xFFDEE4D0)),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  titulo,
+                  style: pw.TextStyle(
+                    font: fontLatoBold,
+                    fontSize: 10,
+                    color: _accentColor,
+                  ),
+                ),
+                pw.SizedBox(height: 6),
+                ...nomes.map(
+                  (nome) => pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 4),
+                    child: pw.Text(
+                      nome,
+                      style: style(fontLato, size: 9),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return pw.Container(
+        padding: const pw.EdgeInsets.all(12),
+        decoration: pw.BoxDecoration(
+          color: _hex(0xFFF7F5EF),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+          border: pw.Border.all(color: _hex(0xFFE2D7C8)),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(
+              'Pais dos Noivos',
+              style: pw.TextStyle(
+                font: fontLatoBold,
+                fontSize: 11,
+                color: _accentColor,
+              ),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Row(
+              children: [
+                buildCard('Pais do noivo', [
+                  'Eduardo Gomes da Silva',
+                  'Creusa Categirone Reis Silva',
+                ]),
+                pw.SizedBox(width: 8),
+                buildCard('Pais da noiva', [
+                  'Abigail Moreira Pires Fernandes',
+                  'Ednaldo Fernandes da Silva',
+                ]),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     // ── Alerta de limite ultrapassado ─────────────────────────────────────────
     pw.Widget buildAlerta() {
       return pw.Container(
@@ -280,7 +363,15 @@ class PdfService {
     }
 
     // ── Definição de colunas e larguras ──────────────────────────────────────
-    final colunas = ['Nº', 'Nome', 'Idade', 'Criança', 'Anfitrião', 'Data de Confirmação'];
+    final colunas = [
+      'Nº',
+      'Nome',
+      'Idade',
+      'Criança',
+      'Anfitrião',
+      'Data de Confirmação',
+      'Entrada',
+    ];
 
     // columnWidths usa pw.Table, que garante alinhamento perfeito entre header e linhas
     final colWidths = <int, pw.TableColumnWidth>{
@@ -289,7 +380,8 @@ class PdfService {
       2: const pw.FlexColumnWidth(0.7),
       3: const pw.FlexColumnWidth(0.8),
       4: const pw.FlexColumnWidth(2.0),
-      5: const pw.FlexColumnWidth(1.4),
+      5: const pw.FlexColumnWidth(1.3),
+      6: const pw.FlexColumnWidth(0.9),
     };
 
     pw.TableRow buildHeaderRow() {
@@ -315,52 +407,110 @@ class PdfService {
 
     pw.TableRow buildRow(Convidado c, int index, {bool sombreado = false}) {
       final crianca = c.isCrianca;
-      final bg = crianca ? _childBg : (sombreado ? _statBg : PdfColors.white);
+      final honra = c.convidadoHonra;
+      final bg = honra
+          ? _honorBg
+          : (crianca ? _childBg : (sombreado ? _statBg : PdfColors.white));
+
+      pw.Widget buildNomeCell() {
+        final badges = <pw.Widget>[];
+
+        if (honra) {
+          badges.add(
+            pw.Container(
+              margin: const pw.EdgeInsets.only(left: 6),
+              padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: pw.BoxDecoration(
+                color: _honorAccent,
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
+              ),
+              child: pw.Text(
+                'Honra',
+                style: pw.TextStyle(
+                  font: fontLatoBold,
+                  fontSize: 6.5,
+                  color: PdfColors.white,
+                ),
+              ),
+            ),
+          );
+        }
+
+        return pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            pw.Expanded(
+              child: pw.Text(
+                _titleCase(c.nome),
+                style: style(
+                  fontLatoBold,
+                  size: 8,
+                  color: honra ? _honorAccent : _textColor,
+                ),
+              ),
+            ),
+            ...badges,
+          ],
+        );
+      }
 
       final cells = [
         '${index + 1}',
-        _titleCase(c.nome),
+        buildNomeCell(),
         c.idade != null ? '${c.idade} anos' : '—',
         crianca ? 'Sim' : '',
         _titleCase(c.nomeAnfitriao ?? '—'),
         _formatDate(c.datCriacao),
+        pw.Align(
+          alignment: pw.Alignment.center,
+          child: pw.Container(
+            width: 10,
+            height: 10,
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: _textColor, width: 0.8),
+            ),
+          ),
+        ),
       ];
 
       return pw.TableRow(
         decoration: pw.BoxDecoration(color: bg),
         children: cells.asMap().entries.map((e) {
           final isCriancaCol = e.key == 3 && crianca;
+          final value = e.value;
           return pw.Padding(
             padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            child: isCriancaCol
-                ? pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 1,
-                    ),
-                    decoration: pw.BoxDecoration(
-                      color: _childAccent,
-                      borderRadius: const pw.BorderRadius.all(
-                        pw.Radius.circular(3),
+            child: value is pw.Widget
+                ? value
+                : isCriancaCol
+                    ? pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: pw.BoxDecoration(
+                          color: _childAccent,
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(3),
+                          ),
+                        ),
+                        child: pw.Text(
+                          'Criança',
+                          style: pw.TextStyle(
+                            font: fontLatoBold,
+                            fontSize: 7,
+                            color: PdfColors.white,
+                          ),
+                        ),
+                      )
+                    : pw.Text(
+                        value.toString(),
+                        style: style(
+                          e.key == 0 ? fontLatoBold : fontLato,
+                          size: 8,
+                          color: crianca ? _accentColor : _textColor,
+                        ),
                       ),
-                    ),
-                    child: pw.Text(
-                      'Criança',
-                      style: pw.TextStyle(
-                        font: fontLatoBold,
-                        fontSize: 7,
-                        color: PdfColors.white,
-                      ),
-                    ),
-                  )
-                : pw.Text(
-                    e.value,
-                    style: style(
-                      e.key == 0 ? fontLatoBold : fontLato,
-                      size: 8,
-                      color: crianca ? _accentColor : _textColor,
-                    ),
-                  ),
           );
         }).toList(),
       );
@@ -448,6 +598,8 @@ class PdfService {
         build: (ctx) => [
           pw.SizedBox(height: 4),
           buildIntro(),
+          pw.SizedBox(height: 10),
+          buildPaisNoivos(),
           pw.SizedBox(height: 10),
           buildStats(),
           if (limiteUltrapassado) ...[
