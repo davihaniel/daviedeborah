@@ -3,7 +3,7 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"version.json": "31790694a1899c2599bc1418441b596c",
+const RESOURCES = {"version.json": "fee5403de56ff67a0a986881ec7e90cf",
 "icons/Icon-maskable-192.png": "87b15f0ce7966a2168a9555adeeb78d2",
 "icons/Icon-512.png": "8076994d0b2386059c15feb737d685ea",
 "icons/Icon-maskable-512.png": "8076994d0b2386059c15feb737d685ea",
@@ -21,12 +21,12 @@ const RESOURCES = {"version.json": "31790694a1899c2599bc1418441b596c",
 "canvaskit/canvaskit.wasm": "07b9f5853202304d3b0749d9306573cc",
 "canvaskit/skwasm_heavy.js.symbols": "3c01ec03b5de6d62c34e17014d1decd3",
 "flutter.js": "888483df48293866f9f41d3d9274a779",
-"flutter_bootstrap.js": "411cb78df0dd491c8f13a299c27772a5",
+"flutter_bootstrap.js": "c3a22b0a08a4d40485b068ed3cbfba17",
 "manifest.json": "cf20ab1bc8ad672a346dbecd6fc6bda9",
 "index.html": "afb1856768621f27f29264bd21669242",
 "/": "afb1856768621f27f29264bd21669242",
 "favicon.png": "ec5d24a2c03bf7cc6ecf44fb0dfaafd8",
-"main.dart.js": "bec99ad36860c034b77d8ac1992fd99f",
+"main.dart.js": "aabb3a6a0c29cdbac13d5f387b7c27e1",
 "assets/NOTICES": "de5d0e553bb92a1a9757f320887fd7b5",
 "assets/packages/font_awesome_flutter/lib/fonts/Font-Awesome-7-Free-Regular-400.otf": "026bb1c4baa65e28a930b5cb720a3d06",
 "assets/packages/font_awesome_flutter/lib/fonts/Font-Awesome-7-Free-Solid-900.otf": "c0d8062305c8ed14904c276e9b766633",
@@ -37,7 +37,7 @@ const RESOURCES = {"version.json": "31790694a1899c2599bc1418441b596c",
 "assets/AssetManifest.json": "28aa4d3a31099f40524aac8d9d3d6d85",
 "assets/FontManifest.json": "c75f7af11fb9919e042ad2ee704db319",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
-"assets/fonts/MaterialIcons-Regular.otf": "683518900a8cc4fb20cb6abbde5f48e8"};
+"assets/fonts/MaterialIcons-Regular.otf": "f60f193a2c3cb8f8553b05edceb2dff8"};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",
