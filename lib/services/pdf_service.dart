@@ -68,7 +68,7 @@ class PdfService {
     final totalAdultos = convidados.where((c) => !c.isCrianca).length;
     final totalCriancas = convidados.where((c) => c.isCrianca).length;
     final totalPagantes = totalAdultos; // crianças < 6 não contam
-    final limiteUltrapassado = totalAdultos > 160;
+    final limiteUltrapassado = totalAdultos > 150;
 
     final geradoEm = DateTime.now();
     final geradoEmStr =
@@ -165,206 +165,8 @@ class PdfService {
       );
     }
 
-    // ── Bloco de texto introdutório ───────────────────────────────────────────
-    pw.Widget buildIntro() {
-      final regras = [
-        'A seção "Pais dos Noivos" traz os nomes principais para referência da portaria.',
-        'Crianças com menos de 6 anos não contam como ocupantes pagantes.',
-        'O casamento foi planejado para até 160 convidados pagantes (adultos).',
-        'Pessoas que não estão nesta lista não devem entrar.',
-        'Não incomodar os noivos em hipótese nenhuma.',
-        'A liberação de pessoas é feita somente a pedido dos noivos, por intermédio da Aguida (cerimonial).',
-        'Pessoas com destaque em verde são convidados de honra e podem entrar a partir de 14h.',
-      ];
-
-      return pw.Container(
-        padding: const pw.EdgeInsets.all(12),
-        decoration: pw.BoxDecoration(
-          color: _statBg,
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-          border: pw.Border.all(color: _primaryColor, width: 1),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              'Instruções para a Portaria',
-              style: pw.TextStyle(
-                font: fontLatoBold,
-                fontSize: 11,
-                color: _accentColor,
-              ),
-            ),
-            pw.SizedBox(height: 6),
-            ...regras.asMap().entries.map(
-              (e) => pw.Padding(
-                padding: const pw.EdgeInsets.only(bottom: 3),
-                child: pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      '${e.key + 1}. ',
-                      style: style(fontLatoBold, size: 9, color: _primaryColor),
-                    ),
-                    pw.Expanded(
-                      child: pw.Text(
-                        e.value,
-                        style: style(fontLato, size: 9),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // ── Box de resumo estatístico ─────────────────────────────────────────────
-    pw.Widget buildStats() {
-      final items = [
-        ('Confirmados', '$totalConfirmados'),
-        ('Adultos', '$totalAdultos'),
-        ('Crianças (< 6 anos)', '$totalCriancas'),
-        ('Pagantes', '$totalPagantes'),
-      ];
-
-      return pw.Row(
-        children: items.map((item) {
-          return pw.Expanded(
-            child: pw.Container(
-              margin: const pw.EdgeInsets.only(right: 6),
-              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: pw.BoxDecoration(
-                color: _statBg,
-                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                border: pw.Border.all(color: _hex(0xFFDEE4D0)),
-              ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    item.$2,
-                    style: pw.TextStyle(
-                      font: fontPlayfairBold,
-                      fontSize: 18,
-                      color: _primaryColor,
-                    ),
-                  ),
-                  pw.Text(
-                    item.$1,
-                    style: style(fontLato, size: 8, color: _lightText),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
-      );
-    }
-
-    pw.Widget buildPaisNoivos() {
-      pw.Widget buildCard(String titulo, List<String> nomes) {
-        return pw.Expanded(
-          child: pw.Container(
-            padding: const pw.EdgeInsets.all(12),
-            decoration: pw.BoxDecoration(
-              color: _statBg,
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-              border: pw.Border.all(color: _hex(0xFFDEE4D0)),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  titulo,
-                  style: pw.TextStyle(
-                    font: fontLatoBold,
-                    fontSize: 10,
-                    color: _accentColor,
-                  ),
-                ),
-                pw.SizedBox(height: 6),
-                ...nomes.map(
-                  (nome) => pw.Padding(
-                    padding: const pw.EdgeInsets.only(bottom: 4),
-                    child: pw.Text(
-                      nome,
-                      style: style(fontLato, size: 9),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      return pw.Container(
-        padding: const pw.EdgeInsets.all(12),
-        decoration: pw.BoxDecoration(
-          color: _hex(0xFFF7F5EF),
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-          border: pw.Border.all(color: _hex(0xFFE2D7C8)),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              'Pais dos Noivos',
-              style: pw.TextStyle(
-                font: fontLatoBold,
-                fontSize: 11,
-                color: _accentColor,
-              ),
-            ),
-            pw.SizedBox(height: 8),
-            pw.Row(
-              children: [
-                buildCard('Pais do noivo', [
-                  'Eduardo Gomes da Silva',
-                  'Creusa Categirone Reis Silva',
-                ]),
-                pw.SizedBox(width: 8),
-                buildCard('Pais da noiva', [
-                  'Abigail Moreira Pires Fernandes',
-                  'Ednaldo Fernandes da Silva',
-                ]),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    // ── Alerta de limite ultrapassado ─────────────────────────────────────────
-    pw.Widget buildAlerta() {
-      return pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: pw.BoxDecoration(
-          color: _dangerBg,
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-          border: pw.Border.all(color: _dangerBorder, width: 1),
-        ),
-        child: pw.Row(
-          children: [
-            pw.Text('⚠', style: style(fontLatoBold, size: 14, color: _dangerBorder)),
-            pw.SizedBox(width: 8),
-            pw.Expanded(
-              child: pw.Text(
-                'ATENÇÃO: O limite de 160 adultos foi ultrapassado ($totalAdultos adultos confirmados).',
-                style: style(fontLatoBold, size: 9, color: _dangerBorder),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     // ── Definição de colunas e larguras ──────────────────────────────────────
     final colunas = [
-      'Nº',
       'Nome',
       'Idade',
       'Criança',
@@ -375,13 +177,12 @@ class PdfService {
 
     // columnWidths usa pw.Table, que garante alinhamento perfeito entre header e linhas
     final colWidths = <int, pw.TableColumnWidth>{
-      0: const pw.FlexColumnWidth(0.5),
-      1: const pw.FlexColumnWidth(2.8),
-      2: const pw.FlexColumnWidth(0.7),
-      3: const pw.FlexColumnWidth(0.8),
-      4: const pw.FlexColumnWidth(2.0),
-      5: const pw.FlexColumnWidth(1.3),
-      6: const pw.FlexColumnWidth(0.9),
+      0: const pw.FlexColumnWidth(2.8),
+      1: const pw.FlexColumnWidth(0.7),
+      2: const pw.FlexColumnWidth(0.8),
+      3: const pw.FlexColumnWidth(2.0),
+      4: const pw.FlexColumnWidth(1.3),
+      5: const pw.FlexColumnWidth(0.9),
     };
 
     pw.TableRow buildHeaderRow() {
@@ -455,7 +256,6 @@ class PdfService {
       }
 
       final cells = [
-        '${index + 1}',
         buildNomeCell(),
         c.idade != null ? '${c.idade} anos' : '—',
         crianca ? 'Sim' : '',
@@ -476,7 +276,7 @@ class PdfService {
       return pw.TableRow(
         decoration: pw.BoxDecoration(color: bg),
         children: cells.asMap().entries.map((e) {
-          final isCriancaCol = e.key == 3 && crianca;
+          final isCriancaCol = e.key == 2 && crianca;
           final value = e.value;
           return pw.Padding(
             padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -597,16 +397,6 @@ class PdfService {
         footer: buildFooter,
         build: (ctx) => [
           pw.SizedBox(height: 4),
-          buildIntro(),
-          pw.SizedBox(height: 10),
-          buildPaisNoivos(),
-          pw.SizedBox(height: 10),
-          buildStats(),
-          if (limiteUltrapassado) ...[
-            pw.SizedBox(height: 8),
-            buildAlerta(),
-          ],
-          pw.SizedBox(height: 12),
           // Título da tabela
           pw.Text(
             agruparPorAnfitriao

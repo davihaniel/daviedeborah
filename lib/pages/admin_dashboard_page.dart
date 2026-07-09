@@ -1007,7 +1007,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
           _StatData(
             'Adultos',
-            '$totalAdultos/160',
+            '$totalAdultos/150',
             'pessoas',
             FontAwesomeIcons.userTie,
             AppTheme.accentColor,
