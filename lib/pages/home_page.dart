@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../main.dart';
 import '../config/app_theme.dart';
 import '../widgets/section_title.dart';
@@ -109,14 +110,14 @@ class _HomePageState extends State<HomePage> {
           return _buildCountdownSection(isMobile, _store.now);
         },
       ),
-      // O Casal Section
-      Container(key: _sectionKeys['casal'], child: const CasalPage()),
+      // Presentes Section
+      Container(key: _sectionKeys['presentes'], child: const PresentesPage()),
       // Cerimônia Section
       Container(key: _sectionKeys['cerimonia'], child: const CerimoniaPage()),
       // Recepção Section
       Container(key: _sectionKeys['recepcao'], child: const RecepcaoPage()),
-      // Presentes Section
-      Container(key: _sectionKeys['presentes'], child: const PresentesPage()),
+      // O Casal Section
+      Container(key: _sectionKeys['casal'], child: const CasalPage()),
       if (appSettings.rsvpEnable)
         // RSVP Section
         Container(key: _sectionKeys['rsvp'], child: const RsvpPage()),
@@ -181,8 +182,8 @@ class _HomePageState extends State<HomePage> {
                       onTap: () => _scrollToSection('home'),
                     ),
                     _NavButton(
-                      label: 'O Casal',
-                      onTap: () => _scrollToSection('casal'),
+                      label: 'Presentes',
+                      onTap: () => _scrollToSection('presentes'),
                     ),
                     _NavButton(
                       label: 'Cerimônia',
@@ -193,8 +194,8 @@ class _HomePageState extends State<HomePage> {
                       onTap: () => _scrollToSection('recepcao'),
                     ),
                     _NavButton(
-                      label: 'Presentes',
-                      onTap: () => _scrollToSection('presentes'),
+                      label: 'O Casal',
+                      onTap: () => _scrollToSection('casal'),
                     ),
                     _NavButton(
                       label: 'Recados',
@@ -221,11 +222,11 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   _DrawerItem(
-                    icon: FontAwesomeIcons.userGroup,
-                    label: 'O Casal',
+                    icon: FontAwesomeIcons.gift,
+                    label: 'Presentes',
                     onTap: () {
                       Navigator.pop(context);
-                      _scrollToSection('casal');
+                      _scrollToSection('presentes');
                     },
                   ),
                   _DrawerItem(
@@ -245,11 +246,11 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   _DrawerItem(
-                    icon: FontAwesomeIcons.gift,
-                    label: 'Presentes',
+                    icon: FontAwesomeIcons.userGroup,
+                    label: 'O Casal',
                     onTap: () {
                       Navigator.pop(context);
-                      _scrollToSection('presentes');
+                      _scrollToSection('casal');
                     },
                   ),
                   _DrawerItem(
@@ -265,6 +266,13 @@ class _HomePageState extends State<HomePage> {
             )
           : null,
     );
+  }
+
+  void _openMaps() async {
+    final url = Uri.parse('https://maps.app.goo.gl/RsmDn5ETuPBN6grq6');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   Widget _buildHeroSection(BuildContext context, bool isMobile) {
@@ -361,23 +369,21 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  if (appSettings.rsvpEnable) ...[
-                    const SizedBox(height: 32),
-                    ElevatedButton.icon(
-                      onPressed: () => _scrollToSection('rsvp'),
-                      icon: const Icon(
-                        FontAwesomeIcons.envelopeOpenText,
-                        size: 18,
-                      ),
-                      label: const Text('Confirmar Presença'),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isMobile ? 24 : 32,
-                          vertical: isMobile ? 16 : 20,
-                        ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () => _openMaps(),
+                    icon: const Icon(
+                      FontAwesomeIcons.mapLocationDot,
+                      size: 18,
+                    ),
+                    label: const Text('Ver Localização'),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 24 : 32,
+                        vertical: isMobile ? 16 : 20,
                       ),
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
